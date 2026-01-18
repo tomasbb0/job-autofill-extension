@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support - Job Application Autofill</title>
+  <link rel="icon" type="image/png" href="icon.png">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 60px 20px;
+    }
+    
+    .back-link {
+      color: #3b82f6;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 40px;
+    }
+    
+    .back-link:hover {
+      text-decoration: underline;
+    }
+    
+    h1 {
+      font-size: 40px;
+      margin-bottom: 20px;
+    }
+    
+    .subtitle {
+      color: #94a3b8;
+      font-size: 18px;
+      margin-bottom: 40px;
+    }
+    
+    .support-section {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 24px;
+    }
+    
+    .support-section h2 {
+      font-size: 24px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .support-section p {
+      color: #94a3b8;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    
+    .support-section a {
+      color: #3b82f6;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    
+    .support-section a:hover {
+      text-decoration: underline;
+    }
+    
+    .faq {
+      margin-top: 40px;
+    }
+    
+    .faq h2 {
+      font-size: 28px;
+      margin-bottom: 24px;
+    }
+    
+    .faq-item {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+    
+    .faq-item h3 {
+      font-size: 18px;
+      margin-bottom: 12px;
+      color: white;
+    }
+    
+    .faq-item p {
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+    
+    .faq-item code {
+      background: rgba(59, 130, 246, 0.2);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="index.html" class="back-link">← Back to Home</a>
+    
+    <h1>Support Center</h1>
+    <p class="subtitle">We're here to help you get the most out of Job Application Autofill</p>
+    
+    <div class="support-section">
+      <h2>📧 Email Support</h2>
+      <p>Have a question, suggestion, or found a bug? Send us an email and we'll get back to you within 24 hours.</p>
+      <a href="mailto:support@jobautofill.com">support@jobautofill.com</a>
+    </div>
+    
+    <div class="support-section">
+      <h2>🐛 Report a Bug</h2>
+      <p>If you've found a bug or the extension isn't working correctly on a specific job site, please open an issue on GitHub with details about the problem.</p>
+      <a href="https://github.com/tomasbatalha/job-autofill-extension/issues/new" target="_blank">Open a GitHub Issue</a>
+    </div>
+    
+    <div class="support-section">
+      <h2>💡 Feature Requests</h2>
+      <p>Have an idea for a new feature? We'd love to hear it! Open a feature request on GitHub.</p>
+      <a href="https://github.com/tomasbatalha/job-autofill-extension/issues/new?labels=enhancement" target="_blank">Request a Feature</a>
+    </div>
+    
+    <div class="faq">
+      <h2>Frequently Asked Questions</h2>
+      
+      <div class="faq-item">
+        <h3>How do I get an OpenAI API key?</h3>
+        <p>Visit <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>, create an account if needed, and generate a new API key. Paste it in the extension settings.</p>
+      </div>
+      
+      <div class="faq-item">
+        <h3>Is my data safe?</h3>
+        <p>Yes! All your profile data is stored locally in your browser using Chrome's storage API. We never send your personal information to our servers. Your OpenAI API key is used only to communicate directly with OpenAI's API.</p>
+      </div>
+      
+      <div class="faq-item">
+        <h3>The extension isn't detecting fields on a job site</h3>
+        <p>Some job sites use custom form implementations. Try refreshing the page. If it still doesn't work, please report the issue with the job site URL and we'll add support for it.</p>
+      </div>
+      
+      <div class="faq-item">
+        <h3>How much does the AI feature cost?</h3>
+        <p>The extension is free. AI features use your own OpenAI API key, which charges based on usage. Typically, filling out a job application costs less than $0.01 with GPT-4o-mini.</p>
+      </div>
+      
+      <div class="faq-item">
+        <h3>Can I use it without AI?</h3>
+        <p>Absolutely! The basic autofill features (name, email, phone, etc.) work without any AI. Just fill in your profile and click "Fill All Fields" without enabling the AI option.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

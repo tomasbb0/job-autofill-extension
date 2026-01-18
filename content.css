@@ -1,0 +1,369 @@
+/* Job Autofill Extension - Content Styles */
+
+#job-autofill-toast,
+#jaf-toast,
+#jaf-fill-all-panel,
+.jaf-field-btn {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif !important;
+}
+
+#job-autofill-floating-btn {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif !important;
+}
+/* Button wrapper - ensures buttons appear OUTSIDE input fields */
+.jaf-btn-wrapper {
+  display: inline-flex !important;
+  align-items: center !important;
+  margin-left: 8px !important;
+  vertical-align: middle !important;
+  position: relative !important;
+  z-index: 1000 !important;
+  flex-shrink: 0 !important;
+}
+
+/* Field buttons base styling */
+.jaf-field-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 4px 10px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2) !important;
+  transition: all 0.15s ease !important;
+  border: none !important;
+  outline: none !important;
+}
+
+/* Regular Fill button - green theme */
+.jaf-field-btn:not(.jaf-ai-btn) {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+  color: white !important;
+}
+
+.jaf-field-btn:not(.jaf-ai-btn):hover {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 6px rgba(34,197,94,0.4) !important;
+}
+
+/* AI Fill button - purple theme */
+.jaf-ai-btn {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+  color: white !important;
+}
+
+.jaf-ai-btn:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 6px rgba(139,92,246,0.4) !important;
+}
+
+/* Loading state */
+.jaf-field-btn.loading {
+  opacity: 0.7 !important;
+  pointer-events: none !important;
+}
+
+/* Add Parameter button */
+.jaf-add-param-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: white !important;
+}
+
+.jaf-add-param-btn:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 6px rgba(59,130,246,0.4) !important;
+}
+
+/* Dropdown AI button - same as Fill with AI button */
+.jaf-dropdown-btn {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+  color: white !important;
+}
+
+.jaf-dropdown-btn:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 6px rgba(139,92,246,0.4) !important;
+}
+
+/* Spinning animation for loading fields */
+@keyframes jafSpin {
+  0% {
+    background: linear-gradient(white, white) padding-box, 
+      linear-gradient(0deg, #667eea, #764ba2, #667eea) border-box;
+  }
+  50% {
+    background: linear-gradient(white, white) padding-box, 
+      linear-gradient(180deg, #667eea, #764ba2, #667eea) border-box;
+  }
+  100% {
+    background: linear-gradient(white, white) padding-box, 
+      linear-gradient(360deg, #667eea, #764ba2, #667eea) border-box;
+  }
+}
+
+/* Spin animation for button loading icon */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Toast notification - dark theme */
+#jaf-toast {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  background: #1a1a1a !important;
+  color: #ffffff !important;
+  padding: 14px 40px 14px 18px !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
+  z-index: 999999 !important;
+  max-width: 350px !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  border: 1px solid #333 !important;
+}
+
+/* Toast close button */
+.jaf-toast-close {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  background: transparent !important;
+  border: none !important;
+  color: #888 !important;
+  font-size: 18px !important;
+  cursor: pointer !important;
+  padding: 4px !important;
+  line-height: 1 !important;
+  transition: color 0.15s ease !important;
+}
+
+.jaf-toast-close:hover {
+  color: #fff !important;
+}
+
+/* Toast content layout */
+.jaf-toast-content {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 12px !important;
+}
+
+.jaf-toast-text {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+}
+
+.jaf-toast-text strong {
+  color: #fff !important;
+  font-weight: 600 !important;
+}
+
+.jaf-toast-fields {
+  color: #aaa !important;
+  font-size: 12px !important;
+}
+
+/* Toast hide animation */
+.jaf-toast-hide {
+  opacity: 0 !important;
+  transform: translateY(10px) !important;
+  transition: opacity 0.3s ease, transform 0.3s ease !important;
+}
+
+/* ========================================
+   MAIN AUTOFILL PANEL - Fixed Top Left
+   ======================================== */
+#jaf-fill-all-panel {
+  position: fixed !important;
+  top: 20px !important;
+  left: 20px !important;
+  background: #ffffff !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05) !important;
+  z-index: 999998 !important;
+  width: 280px !important;
+  overflow: hidden !important;
+  transition: transform 0.2s ease, opacity 0.2s ease !important;
+}
+
+#jaf-fill-all-panel.jaf-panel-hidden {
+  transform: translateX(-320px) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Panel Header */
+.jaf-panel-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 12px 14px !important;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+}
+
+.jaf-panel-header svg {
+  fill: white !important;
+  stroke: none !important;
+}
+
+.jaf-panel-header span {
+  flex: 1 !important;
+}
+
+.jaf-panel-close {
+  background: transparent !important;
+  border: none !important;
+  color: #888 !important;
+  font-size: 20px !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  transition: color 0.15s ease !important;
+}
+
+.jaf-panel-close:hover {
+  color: #fff !important;
+}
+
+/* Panel Body */
+.jaf-panel-body {
+  padding: 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+/* Panel Buttons */
+.jaf-panel-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 10px 16px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  width: 100% !important;
+}
+
+.jaf-fill-all-btn {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+  color: white !important;
+}
+
+.jaf-fill-all-btn:hover {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(34,197,94,0.4) !important;
+}
+
+.jaf-ai-analyze-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+}
+
+.jaf-ai-analyze-btn:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(102,126,234,0.4) !important;
+}
+
+/* Panel Stats */
+.jaf-panel-stats {
+  text-align: center !important;
+  font-size: 12px !important;
+  color: #666 !important;
+  padding: 4px 0 !important;
+}
+
+.jaf-stat-count, .jaf-ai-count {
+  font-weight: 700 !important;
+  color: #22c55e !important;
+}
+
+.jaf-ai-count {
+  color: #8b5cf6 !important;
+}
+
+/* AI Toggle */
+.jaf-ai-toggle {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 8px 12px !important;
+  background: #f5f5f5 !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-size: 12px !important;
+  color: #666 !important;
+  transition: all 0.15s ease !important;
+}
+
+.jaf-ai-toggle:hover {
+  background: #eee !important;
+}
+
+.jaf-ai-toggle.jaf-ai-enabled {
+  background: linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(124,58,237,0.1) 100%) !important;
+  color: #7c3aed !important;
+}
+
+.jaf-ai-toggle input[type="checkbox"] {
+  width: 16px !important;
+  height: 16px !important;
+  accent-color: #8b5cf6 !important;
+}
+
+/* CV Section */
+.jaf-cv-section {
+  padding: 10px 12px !important;
+  background: #f9f9f9 !important;
+  border-radius: 6px !important;
+  border: 1px solid #eee !important;
+}
+
+.jaf-cv-label {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 11px !important;
+  color: #888 !important;
+  margin-bottom: 6px !important;
+}
+
+.jaf-cv-suggestion {
+  font-size: 12px !important;
+  color: #333 !important;
+  font-weight: 500 !important;
+}
+
+.jaf-cv-none {
+  color: #999 !important;
+  font-style: italic !important;
+}
+
+/* Spin animation for loading */
+@keyframes jaf-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.jaf-spin {
+  animation: jaf-spin 1s linear infinite !important;
+}
