@@ -439,6 +439,21 @@
       opacity: 0.5;
       pointer-events: none;
     }
+    
+    /* Toggle row for settings */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: #fafafa;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    .toggle-row span {
+      font-size: 12px;
+      color: #333;
+    }
 
     /* Modal */
     .modal-overlay {
@@ -940,18 +955,27 @@
   <div class="tab-content" id="tab-settings">
     <div class="section">
       <div class="section-title">Autofill Options</div>
-      <label class="checkbox-field">
-        <input type="checkbox" id="autoDetect" checked>
+      <div class="toggle-row">
         <span>Auto-detect application forms</span>
-      </label>
-      <label class="checkbox-field" style="margin-top: 8px;">
-        <input type="checkbox" id="showBadge" checked>
+        <label class="toggle-switch">
+          <input type="checkbox" id="autoDetect" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
         <span>Show fill buttons on pages</span>
-      </label>
-      <label class="checkbox-field" style="margin-top: 8px;">
-        <input type="checkbox" id="showPanel" checked>
+        <label class="toggle-switch">
+          <input type="checkbox" id="showBadge" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
         <span>Show autofill panel on pages</span>
-      </label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="showPanel" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
     </div>
     
     <div class="section" style="margin-top: 16px;">
