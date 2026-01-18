@@ -1287,10 +1287,17 @@ First person. Don't repeat other answers.`
     panel.id = 'jaf-fill-all-panel';
     panel.innerHTML = `
       <div class="jaf-panel-header">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="none">
-          <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
-        </svg>
-        <span>Job Autofill</span>
+        <div class="jaf-panel-logo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="none">
+            <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+        </div>
+        <span class="jaf-panel-title">Job Autofill</span>
+        <button class="jaf-panel-minimize" title="Minimize">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v16M4 4h16"/>
+          </svg>
+        </button>
         <button class="jaf-panel-close" title="Close">×</button>
       </div>
       <div class="jaf-panel-body">
@@ -1336,6 +1343,18 @@ First person. Don't repeat other answers.`
 
     panel.querySelector('.jaf-panel-close').addEventListener('click', () => {
       panel.classList.add('jaf-panel-hidden');
+    });
+
+    // Minimize button - collapse to just logo
+    panel.querySelector('.jaf-panel-minimize').addEventListener('click', () => {
+      panel.classList.add('jaf-panel-minimized');
+    });
+
+    // Click on logo to expand when minimized
+    panel.querySelector('.jaf-panel-logo').addEventListener('click', () => {
+      if (panel.classList.contains('jaf-panel-minimized')) {
+        panel.classList.remove('jaf-panel-minimized');
+      }
     });
 
     panel.querySelector('.jaf-fill-all-btn').addEventListener('click', async () => {
@@ -2353,8 +2372,28 @@ Respond ONLY with a JSON array like this:
       font-weight: 600;
       font-size: 13px;
     }
+    .jaf-panel-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: default;
+    }
+    .jaf-panel-title {
+      flex: 1;
+    }
+    .jaf-panel-minimize {
+      background: none;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      opacity: 0.7;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .jaf-panel-minimize:hover { opacity: 1; }
     .jaf-panel-close {
-      margin-left: auto;
       background: none;
       border: none;
       color: #fff;
@@ -2364,6 +2403,26 @@ Respond ONLY with a JSON array like this:
       line-height: 1;
     }
     .jaf-panel-close:hover { opacity: 1; }
+    
+    /* Minimized state - just the logo */
+    #jaf-fill-all-panel.jaf-panel-minimized {
+      width: auto !important;
+      min-width: auto !important;
+    }
+    #jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-header {
+      padding: 10px;
+      border-radius: 12px;
+    }
+    #jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-logo {
+      cursor: pointer;
+    }
+    #jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-title,
+    #jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-minimize,
+    #jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-close,
+    #jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-body {
+      display: none !important;
+    }
+    
     .jaf-panel-body {
       padding: 12px 16px;
     }
