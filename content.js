@@ -27,7 +27,10 @@
 
   // Remove all extension UI from the page
   function removeExtensionUI() {
-    // Remove all field buttons
+    // Remove all field buttons and wrappers
+    document.querySelectorAll('.jaf-field-btn, .jaf-btn-wrapper, .jaf-ai-btn, .jaf-dropdown-btn, .jaf-add-param-btn').forEach(el => el.remove());
+    
+    // Also remove old class names for compatibility
     document.querySelectorAll('.autofill-btn, .autofill-ai-btn, .autofill-dropdown-badge').forEach(el => el.remove());
     
     // Remove fill all panel
@@ -35,10 +38,10 @@
       fillAllPanel.remove();
       fillAllPanel = null;
     }
-    document.querySelectorAll('.autofill-panel').forEach(el => el.remove());
+    document.querySelectorAll('.autofill-panel, #jaf-fill-all-panel').forEach(el => el.remove());
     
     // Remove any toasts
-    document.querySelectorAll('.autofill-toast').forEach(el => el.remove());
+    document.querySelectorAll('.autofill-toast, .jaf-toast').forEach(el => el.remove());
     
     // Clear tracked buttons
     fieldButtons = [];
