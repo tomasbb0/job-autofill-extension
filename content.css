@@ -225,9 +225,8 @@
   width: 18px !important;
   height: 18px !important;
   flex-shrink: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  display: block !important;
+  line-height: 0 !important;
 }
 
 #jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-logo svg {
@@ -236,6 +235,7 @@
   min-width: 18px !important;
   min-height: 18px !important;
   flex-shrink: 0 !important;
+  display: block !important;
 }
 
 #jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-title,
@@ -262,9 +262,12 @@
 }
 
 .jaf-panel-logo {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  display: block !important;
+  line-height: 0 !important;
+}
+
+.jaf-panel-logo svg {
+  display: block !important;
 }
 
 .jaf-panel-title {
