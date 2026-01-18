@@ -202,6 +202,29 @@
   pointer-events: none !important;
 }
 
+/* Minimized state - just floating logo */
+#jaf-fill-all-panel.jaf-panel-minimized {
+  width: auto !important;
+  min-width: auto !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+}
+
+#jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-header {
+  padding: 10px !important;
+  border-radius: 12px !important;
+}
+
+#jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-logo {
+  cursor: pointer !important;
+}
+
+#jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-title,
+#jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-minimize,
+#jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-close,
+#jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-body {
+  display: none !important;
+}
+
 /* Panel Header */
 .jaf-panel-header {
   display: flex !important;
@@ -216,11 +239,42 @@
 
 .jaf-panel-header svg {
   fill: white !important;
-  stroke: none !important;
 }
 
-.jaf-panel-header span {
+.jaf-panel-logo {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.jaf-panel-title {
   flex: 1 !important;
+}
+
+.jaf-panel-minimize {
+  background: transparent !important;
+  border: none !important;
+  color: #888 !important;
+  cursor: pointer !important;
+  padding: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 4px !important;
+  transition: all 0.15s ease !important;
+}
+
+.jaf-panel-minimize:hover {
+  color: #fff !important;
+  background: rgba(255,255,255,0.1) !important;
+}
+
+.jaf-panel-minimize svg {
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2.5 !important;
 }
 
 .jaf-panel-close {
