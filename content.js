@@ -102,11 +102,12 @@
       sendResponse({ success: true });
     } else if (request.action === 'hideButtons') {
       hideButtons();
-      hidePanel();
+      // Don't hide panel here - let showPanel toggle control that
       sendResponse({ success: true });
     } else if (request.action === 'showButtons') {
-      showButtons();
-      showPanel();
+      // Make sure we re-detect and add buttons
+      fieldButtons = [];
+      detectAndAddButtons();
       sendResponse({ success: true });
     } else if (request.action === 'hidePanel') {
       hidePanel();
