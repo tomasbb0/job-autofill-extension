@@ -13,10 +13,32 @@ const FIELDS = [
 let draggedItem = null;
 let customSections = [];
 let customParams = [];
+let currentHostname = '';
 
 // Load saved data
 document.addEventListener('DOMContentLoaded', async () => {
   const data = await chrome.storage.sync.get(null);
+  
+  // Get current tab URL and check if site is enabled
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab && tab.url) {
+      const url = new URL(tab.url);
+      currentHostname = url.hostname;
+      document.getElementById('currentSite').textContent = currentHostname;
+      
+      // Check if site is disabled
+      const disabledSites = data.disabledSites || [];
+      const isEnabled = !disabledSites.includes(currentHostname);
+      document.getElementById('siteEnabled').checked = isEnabled;
+      
+      if (!isEnabled) {
+        document.body.classList.add('site-disabled');
+      }
+    }
+  } catch (e) {
+    document.getElementById('currentSite').textContent = 'Unknown';
+  }
   
   // Load standard fields
   FIELDS.forEach(field => {
@@ -73,7 +95,41 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   // Initialize section add buttons
   initAddParamButtons();
+  
+  // Initialize site toggle
+  initSiteToggle();
 });
+
+// Site enable/disable toggle
+function initSiteToggle() {
+  const toggle = document.getElementById('siteEnabled');
+  toggle.addEventListener('change', async () => {
+    const data = await chrome.storage.sync.get('disabledSites');
+    let disabledSites = data.disabledSites || [];
+    
+    if (toggle.checked) {
+      // Enable - remove from disabled list
+      disabledSites = disabledSites.filter(site => site !== currentHostname);
+      document.body.classList.remove('site-disabled');
+    } else {
+      // Disable - add to disabled list
+      if (!disabledSites.includes(currentHostname)) {
+        disabledSites.push(currentHostname);
+      }
+      document.body.classList.add('site-disabled');
+    }
+    
+    await chrome.storage.sync.set({ disabledSites });
+    
+    // Send message to content script to enable/disable
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab && tab.id) {
+      chrome.tabs.sendMessage(tab.id, { 
+        action: toggle.checked ? 'enableExtension' : 'disableExtension' 
+      });
+    }
+  });
+}
 
 // Tab switching
 document.querySelectorAll('.tab').forEach(tab => {

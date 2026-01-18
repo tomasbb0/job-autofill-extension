@@ -11,6 +11,64 @@
   let fieldButtons = [];
   let fillAllPanel = null;
   let isInitialized = false;
+  let isExtensionDisabled = false;
+
+  // Check if extension is disabled for this site
+  async function checkIfDisabled() {
+    try {
+      const hostname = window.location.hostname;
+      const data = await chrome.storage.sync.get('disabledSites');
+      const disabledSites = data.disabledSites || [];
+      return disabledSites.includes(hostname);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Remove all extension UI from the page
+  function removeExtensionUI() {
+    // Remove all field buttons
+    document.querySelectorAll('.autofill-btn, .autofill-ai-btn, .autofill-dropdown-badge').forEach(el => el.remove());
+    
+    // Remove fill all panel
+    if (fillAllPanel) {
+      fillAllPanel.remove();
+      fillAllPanel = null;
+    }
+    document.querySelectorAll('.autofill-panel').forEach(el => el.remove());
+    
+    // Remove any toasts
+    document.querySelectorAll('.autofill-toast').forEach(el => el.remove());
+    
+    // Clear tracked buttons
+    fieldButtons = [];
+    isInitialized = false;
+  }
+
+  // Re-enable extension UI
+  function enableExtensionUI() {
+    isExtensionDisabled = false;
+    init();
+  }
+
+  // Listen for messages from popup
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'disableExtension') {
+      isExtensionDisabled = true;
+      removeExtensionUI();
+      sendResponse({ success: true });
+    } else if (request.action === 'enableExtension') {
+      enableExtensionUI();
+      sendResponse({ success: true });
+    } else if (request.action === 'fill') {
+      // Existing fill action
+      if (!isExtensionDisabled) {
+        autofillAll(false);
+        sendResponse({ success: true });
+      }
+    }
+    return true;
+  });
 
   // Field mapping: common field identifiers → storage keys
   const FIELD_MAPPINGS = {
@@ -2124,6 +2182,13 @@ Respond ONLY with a JSON array like this:
 
   // Initialize
   async function init() {
+    // Check if extension is disabled for this site
+    const disabled = await checkIfDisabled();
+    if (disabled) {
+      isExtensionDisabled = true;
+      return;
+    }
+    
     if (isInitialized) return;
     isInitialized = true;
 
@@ -2139,6 +2204,8 @@ Respond ONLY with a JSON array like this:
     }, 1000);
 
     const observer = new MutationObserver((mutations) => {
+      if (isExtensionDisabled) return; // Don't process if disabled
+      
       let shouldCheck = false;
       for (const mutation of mutations) {
         if (mutation.addedNodes.length > 0) {
