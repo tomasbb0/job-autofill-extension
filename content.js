@@ -54,6 +54,35 @@
     init();
   }
 
+  // Hide only buttons but keep panel
+  function hideButtons() {
+    document.querySelectorAll('.jaf-field-btn, .jaf-btn-wrapper, .jaf-ai-btn, .jaf-dropdown-btn, .jaf-add-param-btn').forEach(el => el.remove());
+    document.querySelectorAll('.autofill-btn, .autofill-ai-btn, .autofill-dropdown-badge').forEach(el => el.remove());
+    fieldButtons = [];
+  }
+
+  // Show buttons again
+  function showButtons() {
+    if (!isExtensionDisabled) {
+      detectAndAddButtons();
+    }
+  }
+
+  // Hide panel only
+  function hidePanel() {
+    if (fillAllPanel) {
+      fillAllPanel.style.display = 'none';
+    }
+  }
+
+  // Show panel
+  function showPanel() {
+    if (fillAllPanel) {
+      fillAllPanel.style.display = 'block';
+      fillAllPanel.classList.remove('jaf-panel-hidden');
+    }
+  }
+
   // Listen for messages from popup
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'disableExtension') {
@@ -62,6 +91,26 @@
       sendResponse({ success: true });
     } else if (request.action === 'enableExtension') {
       enableExtensionUI();
+      sendResponse({ success: true });
+    } else if (request.action === 'hideButtons') {
+      hideButtons();
+      hidePanel();
+      sendResponse({ success: true });
+    } else if (request.action === 'showButtons') {
+      showButtons();
+      showPanel();
+      sendResponse({ success: true });
+    } else if (request.action === 'hidePanel') {
+      hidePanel();
+      sendResponse({ success: true });
+    } else if (request.action === 'showPanel') {
+      showPanel();
+      sendResponse({ success: true });
+    } else if (request.action === 'updateSettings') {
+      // Handle settings updates
+      if (request.settings) {
+        profileData = { ...profileData, ...request.settings };
+      }
       sendResponse({ success: true });
     } else if (request.action === 'fill') {
       // Existing fill action
@@ -2018,6 +2067,13 @@ Respond ONLY with a JSON array like this:
 
     if (hasDetectedFields || detectJobPage()) {
       createFillAllPanel();
+      
+      // Check if panel should be hidden by default
+      chrome.storage.sync.get(['showPanel']).then(data => {
+        if (data.showPanel === false && fillAllPanel) {
+          fillAllPanel.style.display = 'none';
+        }
+      });
     }
   }
 
@@ -2202,6 +2258,16 @@ Respond ONLY with a JSON array like this:
     if (disabled) {
       isExtensionDisabled = true;
       return;
+    }
+    
+    // Check for session-based hiding
+    try {
+      const sessionData = await chrome.storage.session.get('hiddenSession');
+      if (sessionData.hiddenSession) {
+        return; // Don't show anything this session
+      }
+    } catch (e) {
+      // Session storage may not be available
     }
     
     if (isInitialized) return;

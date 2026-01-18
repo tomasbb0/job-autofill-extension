@@ -6,7 +6,7 @@ const FIELDS = [
   'workAuth', 'sponsorship',
   'linkedin', 'website', 'github', 'twitter',
   'heardAbout', 'salary', 'startDate',
-  'autoDetect', 'showBadge',
+  'autoDetect', 'showBadge', 'showPanel',
   'openaiKey', 'userContext', 'cvContent'
 ];
 
@@ -131,6 +131,82 @@ function initSiteToggle() {
   });
 }
 
+// Settings checkboxes - auto-detect and show buttons
+document.getElementById('autoDetect')?.addEventListener('change', async (e) => {
+  await chrome.storage.sync.set({ autoDetect: e.target.checked });
+  // Notify all tabs
+  const tabs = await chrome.tabs.query({});
+  tabs.forEach(tab => {
+    if (tab.id) {
+      chrome.tabs.sendMessage(tab.id, { 
+        action: 'updateSettings', 
+        settings: { autoDetect: e.target.checked }
+      }).catch(() => {});
+    }
+  });
+});
+
+document.getElementById('showBadge')?.addEventListener('change', async (e) => {
+  await chrome.storage.sync.set({ showBadge: e.target.checked });
+  // Notify all tabs
+  const tabs = await chrome.tabs.query({});
+  tabs.forEach(tab => {
+    if (tab.id) {
+      chrome.tabs.sendMessage(tab.id, { 
+        action: e.target.checked ? 'showButtons' : 'hideButtons'
+      }).catch(() => {});
+    }
+  });
+});
+
+document.getElementById('showPanel')?.addEventListener('change', async (e) => {
+  await chrome.storage.sync.set({ showPanel: e.target.checked });
+  // Notify all tabs
+  const tabs = await chrome.tabs.query({});
+  tabs.forEach(tab => {
+    if (tab.id) {
+      chrome.tabs.sendMessage(tab.id, { 
+        action: e.target.checked ? 'showPanel' : 'hidePanel'
+      }).catch(() => {});
+    }
+  });
+});
+
+// Quick action buttons - hide/show on all tabs
+document.getElementById('hideWindowBtn')?.addEventListener('click', async () => {
+  // Store session state
+  await chrome.storage.session.set({ hiddenSession: true });
+  
+  // Notify all tabs to hide
+  const tabs = await chrome.tabs.query({});
+  tabs.forEach(tab => {
+    if (tab.id) {
+      chrome.tabs.sendMessage(tab.id, { action: 'hideButtons' }).catch(() => {});
+    }
+  });
+  
+  // Update UI
+  document.getElementById('siteEnabled').checked = false;
+  document.body.classList.add('site-disabled');
+});
+
+document.getElementById('showWindowBtn')?.addEventListener('click', async () => {
+  // Clear session state
+  await chrome.storage.session.remove('hiddenSession');
+  
+  // Notify all tabs to show
+  const tabs = await chrome.tabs.query({});
+  tabs.forEach(tab => {
+    if (tab.id) {
+      chrome.tabs.sendMessage(tab.id, { action: 'showButtons' }).catch(() => {});
+    }
+  });
+  
+  // Update UI
+  document.getElementById('siteEnabled').checked = true;
+  document.body.classList.remove('site-disabled');
+});
+
 // Tab switching
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
@@ -183,7 +259,7 @@ document.getElementById('saveParamsBtn').addEventListener('click', async () => {
   });
   
   // Save checkbox fields
-  ['autoDetect', 'showBadge'].forEach(field => {
+  ['autoDetect', 'showBadge', 'showPanel'].forEach(field => {
     const el = document.getElementById(field);
     if (el) {
       data[field] = el.checked;
