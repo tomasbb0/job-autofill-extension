@@ -218,6 +218,11 @@
   cursor: pointer !important;
 }
 
+#jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-logo svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
 #jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-title,
 #jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-minimize,
 #jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-close,
