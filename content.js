@@ -1294,8 +1294,8 @@ First person. Don't repeat other answers.`
         </div>
         <span class="jaf-panel-title">Job Autofill</span>
         <button class="jaf-panel-minimize" title="Minimize">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v16M4 4h16"/>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+            <path stroke-linecap="square" d="M5 5v14M5 5h14"/>
           </svg>
         </button>
         <button class="jaf-panel-close" title="Close">×</button>
@@ -2386,13 +2386,16 @@ Respond ONLY with a JSON array like this:
       border: none;
       color: #fff;
       cursor: pointer;
-      opacity: 0.7;
+      opacity: 0.8;
       padding: 4px;
+      margin-left: auto;
       display: flex;
       align-items: center;
       justify-content: center;
+      width: 24px;
+      height: 24px;
     }
-    .jaf-panel-minimize:hover { opacity: 1; }
+    .jaf-panel-minimize:hover { opacity: 1; background: rgba(255,255,255,0.1); border-radius: 4px; }
     .jaf-panel-close {
       background: none;
       border: none;
