@@ -56,14 +56,22 @@
 
   // Hide only buttons but keep panel
   function hideButtons() {
+    // Remove buttons
     document.querySelectorAll('.jaf-field-btn, .jaf-btn-wrapper, .jaf-ai-btn, .jaf-dropdown-btn, .jaf-add-param-btn').forEach(el => el.remove());
     document.querySelectorAll('.autofill-btn, .autofill-ai-btn, .autofill-dropdown-badge').forEach(el => el.remove());
+    
+    // Clear the data-autofill-button attribute so buttons can be re-added
+    document.querySelectorAll('[data-autofill-button]').forEach(el => {
+      delete el.dataset.autofillButton;
+    });
+    
     fieldButtons = [];
   }
 
   // Show buttons again
   function showButtons() {
     if (!isExtensionDisabled) {
+      // Re-detect and add buttons
       detectAndAddButtons();
     }
   }
