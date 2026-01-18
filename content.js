@@ -2413,11 +2413,17 @@ Respond ONLY with a JSON array like this:
       min-width: auto !important;
     }
     #jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-header {
-      padding: 10px;
-      border-radius: 12px;
+      padding: 12px 14px !important;
+      border-radius: 12px !important;
+      height: 42px !important;
+      box-sizing: border-box !important;
     }
     #jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-logo {
       cursor: pointer;
+    }
+    #jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-logo svg {
+      width: 18px !important;
+      height: 18px !important;
     }
     #jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-title,
     #jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-minimize,
