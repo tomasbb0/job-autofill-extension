@@ -213,13 +213,21 @@
   padding: 12px 14px !important;
   border-radius: 12px !important;
   min-height: 42px !important;
+  height: 42px !important;
   box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 #jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-logo {
   cursor: pointer !important;
   width: 18px !important;
   height: 18px !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 #jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-logo svg {
@@ -227,6 +235,7 @@
   height: 18px !important;
   min-width: 18px !important;
   min-height: 18px !important;
+  flex-shrink: 0 !important;
 }
 
 #jaf-fill-all-panel.jaf-panel-minimized .jaf-panel-title,
