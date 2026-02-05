@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Application Autofill - Apply Faster with AI</title>
+  <link rel="icon" type="image/png" href="icon.png">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    
+    /* Header */
+    header {
+      padding: 20px 0;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(10px);
+      z-index: 100;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 20px;
+      font-weight: 700;
+      color: white;
+      text-decoration: none;
+    }
+    
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .logo-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 30px;
+      list-style: none;
+    }
+    
+    .nav-links a {
+      color: #94a3b8;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    
+    .nav-links a:hover {
+      color: white;
+    }
+    
+    .cta-btn {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .cta-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+    }
+    
+    /* Hero */
+    .hero {
+      padding: 160px 0 100px;
+      text-align: center;
+    }
+    
+    .hero h1 {
+      font-size: 56px;
+      font-weight: 800;
+      margin-bottom: 24px;
+      background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .hero h1 span {
+      background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+    
+    .hero p {
+      font-size: 20px;
+      color: #94a3b8;
+      max-width: 600px;
+      margin: 0 auto 40px;
+      line-height: 1.6;
+    }
+    
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.2);
+      transition: all 0.2s;
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.15);
+    }
+    
+    /* Features */
+    .features {
+      padding: 80px 0;
+    }
+    
+    .features h2 {
+      text-align: center;
+      font-size: 40px;
+      margin-bottom: 60px;
+    }
+    
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+    }
+    
+    .feature-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 32px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+    
+    .feature-icon {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    
+    .feature-icon svg {
+      width: 28px;
+      height: 28px;
+      stroke: white;
+    }
+    
+    .feature-card h3 {
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+    
+    .feature-card p {
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+    
+    /* How it works */
+    .how-it-works {
+      padding: 80px 0;
+      background: rgba(0,0,0,0.2);
+    }
+    
+    .how-it-works h2 {
+      text-align: center;
+      font-size: 40px;
+      margin-bottom: 60px;
+    }
+    
+    .steps {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    .step {
+      text-align: center;
+      max-width: 280px;
+    }
+    
+    .step-number {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 auto 20px;
+    }
+    
+    .step h3 {
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+    
+    .step p {
+      color: #94a3b8;
+    }
+    
+    /* Supported sites */
+    .supported {
+      padding: 80px 0;
+      text-align: center;
+    }
+    
+    .supported h2 {
+      font-size: 40px;
+      margin-bottom: 20px;
+    }
+    
+    .supported p {
+      color: #94a3b8;
+      margin-bottom: 40px;
+    }
+    
+    .sites {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center;
+    }
+    
+    .site-tag {
+      background: rgba(255,255,255,0.1);
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    /* Support */
+    .support {
+      padding: 80px 0;
+      background: rgba(0,0,0,0.2);
+    }
+    
+    .support h2 {
+      text-align: center;
+      font-size: 40px;
+      margin-bottom: 20px;
+    }
+    
+    .support > p {
+      text-align: center;
+      color: #94a3b8;
+      margin-bottom: 40px;
+    }
+    
+    .support-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .support-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+    }
+    
+    .support-card h3 {
+      margin-bottom: 12px;
+    }
+    
+    .support-card p {
+      color: #94a3b8;
+      margin-bottom: 20px;
+    }
+    
+    .support-card a {
+      color: #3b82f6;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    
+    .support-card a:hover {
+      text-decoration: underline;
+    }
+    
+    /* Footer */
+    footer {
+      padding: 40px 0;
+      text-align: center;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    footer p {
+      color: #64748b;
+    }
+    
+    footer a {
+      color: #94a3b8;
+      text-decoration: none;
+    }
+    
+    footer a:hover {
+      color: white;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero h1 {
+        font-size: 36px;
+      }
+      
+      .nav-links {
+        display: none;
+      }
+      
+      .features h2, .how-it-works h2, .supported h2, .support h2 {
+        font-size: 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="container">
+      <a href="#" class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="white">
+            <path d="M13 2L4 14h7l-2 8 9-12h-7l2-8z"/>
+          </svg>
+        </div>
+        Job Application Autofill
+      </a>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how-it-works">How it Works</a></li>
+        <li><a href="#support">Support</a></li>
+      </ul>
+      <a href="https://chrome.google.com/webstore/detail/kbmpbhhhdojgjnpfpnoehafmllfejgll" class="cta-btn">Add to Chrome</a>
+    </nav>
+  </header>
+  
+  <main>
+    <section class="hero">
+      <div class="container">
+        <h1>Apply to Jobs <span>10x Faster</span></h1>
+        <p>Stop typing the same information over and over. Our AI-powered extension fills job applications instantly, generates tailored cover letters, and handles tricky dropdown questions.</p>
+        <div class="hero-buttons">
+          <a href="https://chrome.google.com/webstore/detail/kbmpbhhhdojgjnpfpnoehafmllfejgll" class="cta-btn">
+            <span>⚡</span> Add to Chrome — It's Free
+          </a>
+          <a href="#how-it-works" class="btn-secondary">See How It Works</a>
+        </div>
+      </div>
+    </section>
+    
+    <section class="features" id="features">
+      <div class="container">
+        <h2>Powerful Features</h2>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M13 2L4 14h7l-2 8 9-12h-7l2-8z"/>
+              </svg>
+            </div>
+            <h3>One-Click Autofill</h3>
+            <p>Fill all your basic information (name, email, phone, LinkedIn, etc.) with a single click. No more repetitive typing.</p>
+          </div>
+          
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+              </svg>
+            </div>
+            <h3>AI-Powered Responses</h3>
+            <p>Generate tailored cover letters and answer open-ended questions like "Why do you want to work here?" using GPT.</p>
+          </div>
+          
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 9l-7 7-7-7"/>
+              </svg>
+            </div>
+            <h3>Smart Dropdown Selection</h3>
+            <p>AI reads dropdown options and intelligently selects the best answer for visa sponsorship, experience level, and more.</p>
+          </div>
+          
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+            </div>
+            <h3>CV/Resume Management</h3>
+            <p>Store multiple versions of your CV and get smart suggestions based on the job type you're applying for.</p>
+          </div>
+          
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              </svg>
+            </div>
+            <h3>Privacy First</h3>
+            <p>All your data stays in your browser. We never send your information to our servers. Your API key is yours alone.</p>
+          </div>
+          
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+              </svg>
+            </div>
+            <h3>Works Everywhere</h3>
+            <p>Compatible with 50+ job boards including Greenhouse, Lever, Workday, Ashby, and company career pages.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <section class="how-it-works" id="how-it-works">
+      <div class="container">
+        <h2>How It Works</h2>
+        <div class="steps">
+          <div class="step">
+            <div class="step-number">1</div>
+            <h3>Set Up Your Profile</h3>
+            <p>Click the extension icon and fill in your information once — name, email, work history, education, etc.</p>
+          </div>
+          <div class="step">
+            <div class="step-number">2</div>
+            <h3>Visit a Job Application</h3>
+            <p>Go to any job application page. The extension automatically detects form fields.</p>
+          </div>
+          <div class="step">
+            <div class="step-number">3</div>
+            <h3>Click Fill All Fields</h3>
+            <p>One click fills everything. Enable AI mode for cover letters and smart dropdown selection.</p>
+          </div>
+          <div class="step">
+            <div class="step-number">4</div>
+            <h3>Review & Submit</h3>
+            <p>Review the filled information, make any adjustments, and submit your application!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <section class="supported">
+      <div class="container">
+        <h2>Works With Your Favorite Job Boards</h2>
+        <p>Tested and optimized for the most popular applicant tracking systems</p>
+        <div class="sites">
+          <span class="site-tag">Greenhouse</span>
+          <span class="site-tag">Lever</span>
+          <span class="site-tag">Workday</span>
+          <span class="site-tag">Ashby</span>
+          <span class="site-tag">SmartRecruiters</span>
+          <span class="site-tag">Jobvite</span>
+          <span class="site-tag">iCIMS</span>
+          <span class="site-tag">Taleo</span>
+          <span class="site-tag">BrassRing</span>
+          <span class="site-tag">Recruitee</span>
+          <span class="site-tag">JazzHR</span>
+          <span class="site-tag">BambooHR</span>
+          <span class="site-tag">And 40+ more...</span>
+        </div>
+      </div>
+    </section>
+    
+    <section class="support" id="support">
+      <div class="container">
+        <h2>Need Help?</h2>
+        <p>We're here to help you get the most out of Job Application Autofill</p>
+        <div class="support-options">
+          <div class="support-card">
+            <h3>📧 Email Support</h3>
+            <p>Have a question or found a bug? Send us an email and we'll get back to you within 24 hours.</p>
+            <a href="mailto:support@jobautofill.com">support@jobautofill.com</a>
+          </div>
+          <div class="support-card">
+            <h3>🐛 Report Issues</h3>
+            <p>Found a bug or have a feature request? Open an issue on our GitHub repository.</p>
+            <a href="https://github.com/tomasbatalha/job-autofill-extension/issues" target="_blank">Open an Issue</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  
+  <footer>
+    <div class="container">
+      <p>© 2026 Job Application Autofill. Made with ⚡ to help you land your dream job.</p>
+      <p style="margin-top: 10px;">
+        <a href="https://github.com/tomasbatalha/job-autofill-extension">GitHub</a> · 
+        <a href="#support">Support</a> · 
+        <a href="privacy.html">Privacy Policy</a>
+      </p>
+    </div>
+  </footer>
+</body>
+</html>

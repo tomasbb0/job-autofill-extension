@@ -1,0 +1,2236 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        width: 400px;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+        background: #fff;
+        color: #000;
+      }
+      .header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .header svg {
+        width: 28px;
+        height: 28px;
+      }
+      .header h1 {
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: -0.3px;
+      }
+      .header p {
+        font-size: 11px;
+        color: #888;
+        margin-top: 2px;
+      }
+
+      .tabs {
+        display: flex;
+        border-bottom: 1px solid #f0f0f0;
+        overflow-x: auto;
+      }
+      .tab {
+        flex: 1;
+        padding: 10px 8px;
+        background: none;
+        border: none;
+        font-size: 11px;
+        font-weight: 500;
+        color: #888;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s;
+        white-space: nowrap;
+      }
+      .tab.active {
+        color: #000;
+        border-bottom-color: #000;
+      }
+      .tab:hover {
+        color: #000;
+      }
+
+      .tab-content {
+        display: none;
+        padding: 16px;
+        max-height: 420px;
+        overflow-y: auto;
+      }
+      .tab-content.active {
+        display: block;
+      }
+
+      /* Parameter Section Styles */
+      .param-section {
+        margin-bottom: 12px;
+        border: 1px solid #e5e5e5;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .param-section.collapsed .param-section-content {
+        display: none;
+      }
+      .param-section-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        background: #fafafa;
+        cursor: pointer;
+        user-select: none;
+      }
+      .param-section-header:hover {
+        background: #f0f0f0;
+      }
+      .param-section-title {
+        flex: 1;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        color: #666;
+      }
+      .param-section-toggle {
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s;
+      }
+      .param-section.collapsed .param-section-toggle {
+        transform: rotate(-90deg);
+      }
+      .param-section-actions {
+        display: flex;
+        gap: 4px;
+      }
+      .param-section-actions button {
+        width: 24px;
+        height: 24px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #888;
+      }
+      .param-section-actions button:hover {
+        background: #e5e5e5;
+        color: #000;
+      }
+      .param-section-content {
+        padding: 10px;
+      }
+
+      /* Parameter Item (draggable) */
+      .param-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        background: #fff;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        margin-bottom: 6px;
+        cursor: grab;
+        transition: all 0.15s;
+      }
+      .param-item:hover {
+        border-color: #ccc;
+        background: #fafafa;
+      }
+      .param-item.dragging {
+        opacity: 0.5;
+        cursor: grabbing;
+      }
+      .param-item.drag-over {
+        border-color: #667eea;
+        background: #f0f4ff;
+      }
+      .param-item-drag {
+        color: #ccc;
+        cursor: grab;
+        font-size: 10px;
+      }
+      .param-item-content {
+        flex: 1;
+        min-width: 0;
+      }
+      .param-item-label {
+        font-size: 10px;
+        color: #888;
+        margin-bottom: 2px;
+      }
+      .param-item-input {
+        width: 100%;
+        padding: 6px 8px;
+        border: 1px solid #e5e5e5;
+        border-radius: 4px;
+        font-size: 12px;
+        font-family: inherit;
+      }
+      .param-item-input:focus {
+        outline: none;
+        border-color: #000;
+      }
+      .param-item-delete {
+        width: 24px;
+        height: 24px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ccc;
+        opacity: 0;
+        transition: opacity 0.15s;
+      }
+      .param-item:hover .param-item-delete {
+        opacity: 1;
+      }
+      .param-item-delete:hover {
+        background: #fee2e2;
+        color: #dc2626;
+      }
+
+      /* Add section button */
+      .add-section-btn {
+        width: 100%;
+        padding: 10px;
+        border: 2px dashed #e5e5e5;
+        border-radius: 8px;
+        background: transparent;
+        cursor: pointer;
+        font-size: 12px;
+        color: #888;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: all 0.2s;
+      }
+      .add-section-btn:hover {
+        border-color: #ccc;
+        color: #666;
+        background: #fafafa;
+      }
+
+      .section {
+        margin-bottom: 16px;
+      }
+      .section-title {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #888;
+        margin-bottom: 10px;
+      }
+
+      .field {
+        margin-bottom: 12px;
+      }
+      .field label {
+        display: block;
+        font-size: 11px;
+        font-weight: 500;
+        color: #666;
+        margin-bottom: 4px;
+      }
+      .field input,
+      .field textarea,
+      .field select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        font-size: 13px;
+        font-family: inherit;
+        transition: all 0.2s;
+      }
+      .field input:focus,
+      .field textarea:focus,
+      .field select:focus {
+        outline: none;
+        border-color: #000;
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+      }
+      .field textarea {
+        resize: vertical;
+        min-height: 60px;
+      }
+
+      .btn {
+        padding: 10px 16px;
+        border: none;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+      .btn svg {
+        width: 14px;
+        height: 14px;
+      }
+      .btn-primary {
+        background: #000;
+        color: #fff;
+        width: 100%;
+      }
+      .btn-primary:hover {
+        background: #333;
+      }
+      .btn-secondary {
+        background: #f5f5f5;
+        color: #000;
+      }
+      .btn-secondary:hover {
+        background: #e5e5e5;
+      }
+      .btn-ai {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        width: 100%;
+      }
+      .btn-ai:hover {
+        background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+      }
+
+      .btn-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .btn-row .btn {
+        flex: 1;
+      }
+
+      .status {
+        padding: 10px 12px;
+        border-radius: 8px;
+        font-size: 11px;
+        margin-bottom: 12px;
+        display: none;
+      }
+      .status.success {
+        display: block;
+        background: #f0fdf4;
+        color: #166534;
+      }
+      .status.error {
+        display: block;
+        background: #fef2f2;
+        color: #dc2626;
+      }
+
+      .fill-btn {
+        background: #000;
+        color: #fff;
+        padding: 14px;
+        border: none;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s;
+      }
+      .fill-btn:hover {
+        background: #333;
+      }
+      .fill-btn svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      .stats {
+        padding: 12px 16px;
+        background: #fafafa;
+        border-top: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: space-around;
+        text-align: center;
+      }
+      .stat-value {
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .stat-label {
+        font-size: 9px;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .checkbox-field {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        background: #fafafa;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .checkbox-field input {
+        width: auto;
+        margin: 0;
+      }
+      .checkbox-field span {
+        font-size: 12px;
+      }
+
+      /* CV List */
+      .cv-list {
+        margin-top: 8px;
+      }
+      .cv-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        background: #fafafa;
+        border-radius: 8px;
+        margin-bottom: 6px;
+      }
+      .cv-item.cv-default {
+        background: #f0fdf4;
+        border: 1px solid #86efac;
+      }
+      .cv-icon {
+        width: 32px;
+        height: 32px;
+        background: #000;
+        color: #fff;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .cv-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .cv-name {
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .cv-meta {
+        font-size: 10px;
+        color: #888;
+      }
+      .cv-actions {
+        display: flex;
+        gap: 4px;
+      }
+      .cv-actions button {
+        width: 26px;
+        height: 26px;
+        border: none;
+        background: #e5e5e5;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .cv-actions button:hover {
+        background: #d5d5d5;
+      }
+      .cv-actions button svg {
+        width: 12px;
+        height: 12px;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 20px;
+        color: #888;
+      }
+      .empty-state svg {
+        width: 40px;
+        height: 40px;
+        margin-bottom: 10px;
+        opacity: 0.5;
+      }
+      .empty-state p {
+        font-size: 11px;
+        margin-bottom: 12px;
+      }
+
+      .api-key-field {
+        position: relative;
+      }
+      .api-key-field input {
+        padding-right: 40px;
+      }
+      .api-key-toggle {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px;
+        color: #888;
+      }
+      .api-key-toggle:hover {
+        color: #000;
+      }
+
+      .info-box {
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 11px;
+        color: #0369a1;
+        margin-bottom: 12px;
+      }
+      .info-box.warning {
+        background: #fffbeb;
+        border-color: #fcd34d;
+        color: #92400e;
+      }
+
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #ddd;
+        border-radius: 3px;
+      }
+
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .spin {
+        animation: spin 1s linear infinite;
+      }
+
+      /* Site toggle */
+      .site-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 16px;
+        background: #fafafa;
+        border-bottom: 1px solid #f0f0f0;
+      }
+      .site-toggle-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .site-toggle-info svg {
+        width: 16px;
+        height: 16px;
+        color: #888;
+      }
+      .site-toggle-text {
+        font-size: 11px;
+        color: #666;
+      }
+      .site-toggle-text strong {
+        display: block;
+        font-size: 12px;
+        color: #000;
+        max-width: 180px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .toggle-switch {
+        position: relative;
+        width: 40px;
+        height: 22px;
+      }
+      .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.3s;
+        border-radius: 22px;
+      }
+      .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+      }
+      .toggle-switch input:checked + .toggle-slider {
+        background-color: #22c55e;
+      }
+      .toggle-switch input:checked + .toggle-slider:before {
+        transform: translateX(18px);
+      }
+      .site-disabled .fill-btn {
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
+      /* Toggle row for settings */
+      .toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        background: #fafafa;
+        border-radius: 8px;
+        margin-bottom: 8px;
+      }
+      .toggle-row span {
+        font-size: 12px;
+        color: #333;
+      }
+
+      /* Modal */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-overlay.active {
+        display: flex;
+      }
+      .modal {
+        background: #fff;
+        border-radius: 12px;
+        padding: 20px;
+        width: 300px;
+        max-width: 90%;
+      }
+      .modal h3 {
+        font-size: 14px;
+        margin-bottom: 12px;
+      }
+      .modal input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        font-size: 13px;
+        margin-bottom: 10px;
+      }
+      .modal-btns {
+        display: flex;
+        gap: 8px;
+      }
+      .modal-btns .btn {
+        flex: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <svg
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+        />
+      </svg>
+      <div>
+        <h1>Job Autofill</h1>
+        <p>Fill applications instantly</p>
+      </div>
+    </div>
+
+    <div class="site-toggle" id="siteToggle">
+      <div class="site-toggle-info">
+        <svg
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+          />
+        </svg>
+        <div class="site-toggle-text">
+          <strong id="currentSite">Loading...</strong>
+          <span>Enable for this site</span>
+        </div>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="siteEnabled" checked />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <button class="fill-btn" id="fillBtn">
+      <svg
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M13 10V3L4 14h7v7l9-11h-7z"
+        />
+      </svg>
+      Autofill This Page
+    </button>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="params">Parameters</button>
+      <button class="tab" data-tab="docs">Docs</button>
+      <button class="tab" data-tab="ai">AI</button>
+      <button class="tab" data-tab="settings">Settings</button>
+    </div>
+
+    <!-- PARAMETERS TAB -->
+    <div class="tab-content active" id="tab-params">
+      <div id="statusParams" class="status"></div>
+
+      <div id="paramSectionsContainer">
+        <!-- Personal Info Section -->
+        <div class="param-section" data-section="personal">
+          <div class="param-section-header">
+            <div class="param-section-toggle">
+              <svg
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
+            <div class="param-section-title">Personal Info</div>
+            <div class="param-section-actions">
+              <button class="add-param-to-section" title="Add parameter">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="param-section-content">
+            <div class="param-item" draggable="true" data-key="firstName">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">First Name</div>
+                <input
+                  type="text"
+                  class="param-item-input"
+                  id="firstName"
+                  placeholder="Tomás"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="param-item" draggable="true" data-key="lastName">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">Last Name</div>
+                <input
+                  type="text"
+                  class="param-item-input"
+                  id="lastName"
+                  placeholder="Batalha"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="param-item" draggable="true" data-key="fullName">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">Full Name</div>
+                <input
+                  type="text"
+                  class="param-item-input"
+                  id="fullName"
+                  placeholder="Tomás Batalha"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="param-item" draggable="true" data-key="email">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">Email</div>
+                <input
+                  type="email"
+                  class="param-item-input"
+                  id="email"
+                  placeholder="tomas@email.com"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="param-item" draggable="true" data-key="phone">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">Phone</div>
+                <input
+                  type="tel"
+                  class="param-item-input"
+                  id="phone"
+                  placeholder="+351 912 345 678"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="param-item" draggable="true" data-key="city">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">Location / City</div>
+                <input
+                  type="text"
+                  class="param-item-input"
+                  id="city"
+                  placeholder="Lisbon, Portugal"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="param-item" draggable="true" data-key="country">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">Country</div>
+                <input
+                  type="text"
+                  class="param-item-input"
+                  id="country"
+                  placeholder="Portugal"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="param-item" draggable="true" data-key="workCountries">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">Countries I Want to Work In</div>
+                <input
+                  type="text"
+                  class="param-item-input"
+                  id="workCountries"
+                  placeholder="Portugal, Spain, UK, Remote"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Experience Section -->
+        <div class="param-section" data-section="experience">
+          <div class="param-section-header">
+            <div class="param-section-toggle">
+              <svg
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
+            <div class="param-section-title">Experience</div>
+            <div class="param-section-actions">
+              <button class="add-param-to-section" title="Add parameter">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="param-section-content">
+            <div class="param-item" draggable="true" data-key="currentCompany">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">Current/Recent Company</div>
+                <input
+                  type="text"
+                  class="param-item-input"
+                  id="currentCompany"
+                  placeholder="Google"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="param-item" draggable="true" data-key="currentTitle">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">Current/Recent Title</div>
+                <input
+                  type="text"
+                  class="param-item-input"
+                  id="currentTitle"
+                  placeholder="Software Engineer"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="param-item" draggable="true" data-key="yearsExperience">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">Years of Experience</div>
+                <input
+                  type="text"
+                  class="param-item-input"
+                  id="yearsExperience"
+                  placeholder="3"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Education Section -->
+        <div class="param-section" data-section="education">
+          <div class="param-section-header">
+            <div class="param-section-toggle">
+              <svg
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
+            <div class="param-section-title">Education</div>
+            <div class="param-section-actions">
+              <button class="add-param-to-section" title="Add parameter">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="param-section-content">
+            <div class="param-item" draggable="true" data-key="university">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">University</div>
+                <input
+                  type="text"
+                  class="param-item-input"
+                  id="university"
+                  placeholder="Nova SBE"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="param-item" draggable="true" data-key="degree">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">Degree</div>
+                <input
+                  type="text"
+                  class="param-item-input"
+                  id="degree"
+                  placeholder="Bachelor's in Economics"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="param-item" draggable="true" data-key="gradYear">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">Graduation Year</div>
+                <input
+                  type="text"
+                  class="param-item-input"
+                  id="gradYear"
+                  placeholder="2023"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Links Section -->
+        <div class="param-section" data-section="links">
+          <div class="param-section-header">
+            <div class="param-section-toggle">
+              <svg
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
+            <div class="param-section-title">Links</div>
+            <div class="param-section-actions">
+              <button class="add-param-to-section" title="Add parameter">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="param-section-content">
+            <div class="param-item" draggable="true" data-key="linkedin">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">LinkedIn URL</div>
+                <input
+                  type="url"
+                  class="param-item-input"
+                  id="linkedin"
+                  placeholder="https://linkedin.com/in/username"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="param-item" draggable="true" data-key="website">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">Portfolio / Website</div>
+                <input
+                  type="url"
+                  class="param-item-input"
+                  id="website"
+                  placeholder="https://yoursite.com"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="param-item" draggable="true" data-key="github">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">GitHub</div>
+                <input
+                  type="url"
+                  class="param-item-input"
+                  id="github"
+                  placeholder="https://github.com/username"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Other Section -->
+        <div class="param-section" data-section="other">
+          <div class="param-section-header">
+            <div class="param-section-toggle">
+              <svg
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
+            <div class="param-section-title">Other</div>
+            <div class="param-section-actions">
+              <button class="add-param-to-section" title="Add parameter">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="param-section-content">
+            <div class="param-item" draggable="true" data-key="workAuth">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">Work Authorization</div>
+                <input
+                  type="text"
+                  class="param-item-input"
+                  id="workAuth"
+                  placeholder="Authorized to work"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="param-item" draggable="true" data-key="sponsorship">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">Sponsorship Needed</div>
+                <input
+                  type="text"
+                  class="param-item-input"
+                  id="sponsorship"
+                  placeholder="No"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="param-item" draggable="true" data-key="heardAbout">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">How did you hear about us?</div>
+                <input
+                  type="text"
+                  class="param-item-input"
+                  id="heardAbout"
+                  placeholder="LinkedIn"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="param-item" draggable="true" data-key="salary">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">Salary Expectation</div>
+                <input
+                  type="text"
+                  class="param-item-input"
+                  id="salary"
+                  placeholder="Open to discuss"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="param-item" draggable="true" data-key="startDate">
+              <div class="param-item-drag">⋮⋮</div>
+              <div class="param-item-content">
+                <div class="param-item-label">Start Date</div>
+                <input
+                  type="text"
+                  class="param-item-input"
+                  id="startDate"
+                  placeholder="Immediately"
+                />
+              </div>
+              <button class="param-item-delete" title="Delete">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- New Parameters Section -->
+        <div
+          class="param-section"
+          data-section="custom"
+          style="border-color: #667eea"
+        >
+          <div
+            class="param-section-header"
+            style="
+              background: linear-gradient(
+                135deg,
+                rgba(102, 126, 234, 0.1) 0%,
+                rgba(118, 75, 162, 0.1) 100%
+              );
+            "
+          >
+            <div class="param-section-toggle">
+              <svg
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
+            <div class="param-section-title" style="color: #667eea">
+              New Parameters
+            </div>
+            <div class="param-section-actions">
+              <button class="add-param-to-section" title="Add parameter">
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="param-section-content" id="customParamsContent">
+            <div
+              class="empty-state"
+              id="customParamsEmpty"
+              style="padding: 12px"
+            >
+              <p style="margin: 0; font-size: 11px">
+                Parameters added from forms appear here
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="add-section-btn" id="addSectionBtn">
+        <svg
+          width="14"
+          height="14"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 4v16m8-8H4"
+          />
+        </svg>
+        Add New Section
+      </button>
+
+      <button
+        class="btn btn-primary"
+        id="saveParamsBtn"
+        style="margin-top: 12px"
+      >
+        <svg
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M5 13l4 4L19 7"
+          />
+        </svg>
+        Save All Parameters
+      </button>
+    </div>
+
+    <!-- Documents Tab -->
+    <div class="tab-content" id="tab-docs">
+      <div class="info-box">
+        <strong>📄 CV Management</strong><br />
+        Add CVs here. The extension suggests which to use based on job title.
+      </div>
+
+      <div class="section">
+        <div class="section-title">Your CVs</div>
+        <div id="cvList" class="cv-list">
+          <div class="empty-state" id="cvEmptyState">
+            <svg
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+              />
+            </svg>
+            <p>No CVs added yet</p>
+          </div>
+        </div>
+        <button
+          class="btn btn-secondary"
+          id="addCvBtn"
+          style="width: 100%; margin-top: 8px"
+        >
+          <svg
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          Add CV
+        </button>
+        <input
+          type="file"
+          id="cvFileInput"
+          accept=".pdf,.doc,.docx"
+          style="display: none"
+        />
+      </div>
+
+      <div class="section">
+        <div class="section-title">Cover Letters</div>
+        <div id="coverLetterList" class="cv-list">
+          <div class="empty-state" id="clEmptyState">
+            <svg
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+              />
+            </svg>
+            <p>No cover letters yet</p>
+          </div>
+        </div>
+        <button
+          class="btn btn-secondary"
+          id="addClBtn"
+          style="width: 100%; margin-top: 8px"
+        >
+          <svg
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          Add Cover Letter
+        </button>
+        <input
+          type="file"
+          id="clFileInput"
+          accept=".pdf,.doc,.docx,.txt"
+          style="display: none"
+        />
+      </div>
+    </div>
+
+    <!-- AI Tab -->
+    <div class="tab-content" id="tab-ai">
+      <div class="info-box">
+        <strong>🤖 AI-Powered Responses</strong><br />
+        Auto-generate cover letters and answer open-ended questions.
+      </div>
+
+      <div class="section">
+        <div class="section-title">API Configuration</div>
+
+        <!-- Step-by-step API Key Guide -->
+        <div
+          class="api-setup-guide"
+          style="
+            background: linear-gradient(
+              135deg,
+              rgba(139, 92, 246, 0.1) 0%,
+              rgba(109, 40, 217, 0.1) 100%
+            );
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+          "
+        >
+          <div
+            style="
+              font-size: 11px;
+              font-weight: 600;
+              color: #8b5cf6;
+              margin-bottom: 8px;
+            "
+          >
+            📋 How to get your API Key (30 seconds):
+          </div>
+          <ol
+            style="
+              font-size: 10px;
+              color: #555;
+              margin: 0;
+              padding-left: 16px;
+              line-height: 1.6;
+            "
+          >
+            <li>
+              <a
+                href="https://platform.openai.com/signup"
+                target="_blank"
+                style="color: #8b5cf6; font-weight: 500"
+                >Create OpenAI account</a
+              >
+              (if you don't have one)
+            </li>
+            <li>
+              <a
+                href="https://platform.openai.com/api-keys"
+                target="_blank"
+                style="color: #8b5cf6; font-weight: 500"
+                >Click here to open API Keys page</a
+              >
+            </li>
+            <li>Click <strong>"+ Create new secret key"</strong></li>
+            <li>
+              Name it (e.g., "Job Autofill") and click <strong>"Create"</strong>
+            </li>
+            <li>
+              Copy the key (starts with
+              <code
+                style="
+                  background: #f0f0f0;
+                  padding: 1px 4px;
+                  border-radius: 3px;
+                  font-size: 9px;
+                "
+                >sk-...</code
+              >) and paste below
+            </li>
+          </ol>
+          <a
+            href="https://platform.openai.com/api-keys"
+            target="_blank"
+            class="btn"
+            style="
+              width: 100%;
+              margin-top: 10px;
+              background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+              color: white;
+              font-size: 11px;
+              padding: 8px 12px;
+              text-align: center;
+              text-decoration: none;
+              border-radius: 6px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 6px;
+            "
+          >
+            <svg
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+              />
+            </svg>
+            Open OpenAI API Keys Page →
+          </a>
+        </div>
+
+        <div class="field">
+          <label>OpenAI API Key</label>
+          <div class="api-key-field">
+            <input type="password" id="openaiKey" placeholder="sk-..." />
+            <button class="api-key-toggle" id="toggleApiKey" type="button">
+              <svg
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <p style="font-size: 10px; color: #888; margin-top: -8px">
+          💡 <strong>Tip:</strong> You need to
+          <a
+            href="https://platform.openai.com/settings/organization/billing/overview"
+            target="_blank"
+            style="color: #8b5cf6"
+            >add billing</a
+          >
+          to your OpenAI account (even $5 works for months of use)
+        </p>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Your Context</div>
+        <div class="field">
+          <label>About You (achievements, style)</label>
+          <textarea
+            id="userContext"
+            rows="3"
+            placeholder="Key achievements, skills, what makes you unique..."
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">CV Content</div>
+        <div class="field">
+          <label>CV Text (for AI context)</label>
+          <textarea
+            id="cvContent"
+            rows="3"
+            placeholder="Paste CV text here"
+          ></textarea>
+        </div>
+        <button
+          class="btn btn-secondary"
+          id="extractCvBtn"
+          style="width: 100%; margin-top: 8px"
+        >
+          <svg
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+          Extract from PDFs
+        </button>
+      </div>
+
+      <button class="btn btn-ai" id="saveAiBtn" style="margin-top: 12px">
+        <svg
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+          />
+        </svg>
+        Save AI Settings
+      </button>
+      <div id="statusAi" class="status" style="margin-top: 12px"></div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div class="tab-content" id="tab-settings">
+      <div class="section">
+        <div class="section-title">Autofill Options</div>
+        <div class="toggle-row">
+          <span>Auto-detect application forms</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="autoDetect" checked />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <span>Show fill buttons on pages</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="showBadge" checked />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <span>Show autofill panel on pages</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="showPanel" checked />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="section" style="margin-top: 16px">
+        <div class="section-title">
+          <svg
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            style="margin-right: 6px; vertical-align: -2px"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+            />
+          </svg>
+          Learned Responses
+        </div>
+        <p style="font-size: 10px; color: #888; margin-bottom: 8px">
+          The extension learns from your manual entries. Responses are
+          auto-filled on similar fields.
+        </p>
+        <div
+          id="learnedResponsesList"
+          style="max-height: 120px; overflow-y: auto; margin-bottom: 8px"
+        >
+          <div
+            style="
+              font-size: 11px;
+              color: #999;
+              text-align: center;
+              padding: 12px;
+            "
+          >
+            No learned responses yet
+          </div>
+        </div>
+        <button
+          class="btn btn-secondary"
+          id="clearLearnedBtn"
+          style="width: 100%; font-size: 11px"
+        >
+          <svg
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            style="width: 12px; height: 12px"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+          Clear All Learned Responses
+        </button>
+      </div>
+
+      <div class="section" style="margin-top: 16px">
+        <div class="section-title">Quick Actions</div>
+        <button
+          class="btn btn-secondary"
+          id="hideWindowBtn"
+          style="width: 100%; margin-bottom: 8px"
+        >
+          <svg
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+            />
+          </svg>
+          Hide on all tabs (this session)
+        </button>
+        <button
+          class="btn btn-secondary"
+          id="showWindowBtn"
+          style="width: 100%"
+        >
+          <svg
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+            />
+          </svg>
+          Show on all tabs
+        </button>
+      </div>
+
+      <div class="btn-row" style="margin-top: 16px">
+        <button class="btn btn-secondary" id="exportBtn">
+          <svg
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+            />
+          </svg>
+          Export
+        </button>
+        <button class="btn btn-secondary" id="importBtn">
+          <svg
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+            />
+          </svg>
+          Import
+        </button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div>
+        <div class="stat-value" id="fillCount">0</div>
+        <div class="stat-label">Fields Filled</div>
+      </div>
+      <div>
+        <div class="stat-value" id="pageCount">0</div>
+        <div class="stat-label">Pages Used</div>
+      </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal-overlay" id="addSectionModal">
+      <div class="modal">
+        <h3>Add New Section</h3>
+        <input
+          type="text"
+          id="newSectionName"
+          placeholder="Section name (e.g., Skills)"
+        />
+        <div class="modal-btns">
+          <button class="btn btn-secondary" id="cancelSectionBtn">
+            Cancel
+          </button>
+          <button class="btn btn-primary" id="confirmSectionBtn">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="addParamModal">
+      <div class="modal">
+        <h3>Add New Parameter</h3>
+        <input
+          type="text"
+          id="newParamLabel"
+          placeholder="Label (e.g., Middle Name)"
+        />
+        <input type="text" id="newParamValue" placeholder="Value (optional)" />
+        <div class="modal-btns">
+          <button class="btn btn-secondary" id="cancelParamBtn">Cancel</button>
+          <button class="btn btn-primary" id="confirmParamBtn">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <input type="file" id="importFile" accept=".json" style="display: none" />
+    <input
+      type="file"
+      id="pdfFileInput"
+      accept=".pdf"
+      multiple
+      style="display: none"
+    />
+    <script src="pdf.min.js"></script>
+    <script>
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+    </script>
+    <script src="popup.js"></script>
+  </body>
+</html>
