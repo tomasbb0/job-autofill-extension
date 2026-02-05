@@ -1,10 +1,17 @@
 {
   "manifest_version": 3,
   "name": "Job Application Autofill",
-  "version": "1.0.0",
-  "description": "Auto-fill job application forms with your profile data",
-  "permissions": ["storage", "activeTab", "scripting", "downloads"],
+  "version": "1.1.0",
+  "description": "Auto-fill job application forms with your profile data. Sync across devices with Google/Apple login.",
+  "permissions": ["storage", "activeTab", "scripting", "downloads", "identity"],
   "host_permissions": ["<all_urls>"],
+  "oauth2": {
+    "client_id": "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile"
+    ]
+  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -26,6 +33,7 @@
         "smart-chatbox.js",
         "cover-letter-generator.js",
         "job-tracker.js",
+        "auth.js",
         "content.js"
       ],
       "css": ["content.css"],

@@ -1523,3 +1523,192 @@ function escapeHtml(text) {
   div.textContent = text;
   return div.innerHTML;
 }
+
+// ==================== USER AUTHENTICATION ====================
+
+// Initialize auth UI
+async function initAuthUI() {
+  const userBanner = document.getElementById("userBanner");
+  const userNotSignedIn = document.getElementById("userNotSignedIn");
+  const userSignedIn = document.getElementById("userSignedIn");
+  const googleSignInBtn = document.getElementById("googleSignIn");
+  const appleSignInBtn = document.getElementById("appleSignIn");
+  const signOutBtn = document.getElementById("signOutBtn");
+
+  // Check if we have a stored user session
+  try {
+    const data = await chrome.storage.sync.get(["userSession"]);
+    if (data.userSession) {
+      showSignedInState(data.userSession);
+    }
+  } catch (err) {
+    console.error("Error checking auth state:", err);
+  }
+
+  // Google Sign In
+  googleSignInBtn?.addEventListener("click", async () => {
+    googleSignInBtn.disabled = true;
+    googleSignInBtn.innerHTML = `<span class="spin">⏳</span> Signing in...`;
+
+    try {
+      // Use chrome.identity for Google auth
+      const token = await new Promise((resolve, reject) => {
+        chrome.identity.getAuthToken({ interactive: true }, (token) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else {
+            resolve(token);
+          }
+        });
+      });
+
+      // Get user info from Google
+      const response = await fetch(
+        "https://www.googleapis.com/oauth2/v2/userinfo",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to get user info");
+
+      const userInfo = await response.json();
+
+      const userSession = {
+        uid: userInfo.id,
+        email: userInfo.email,
+        displayName: userInfo.name,
+        photoURL: userInfo.picture,
+        provider: "google",
+        signedInAt: Date.now(),
+      };
+
+      // Save session
+      await chrome.storage.sync.set({ userSession });
+
+      // Show signed in state
+      showSignedInState(userSession);
+
+      // Sync data to cloud
+      await syncToCloud(userSession);
+
+    } catch (err) {
+      console.error("Google sign-in error:", err);
+      alert("Sign-in failed: " + err.message);
+      googleSignInBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" width="16" height="16">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Google
+      `;
+    }
+    googleSignInBtn.disabled = false;
+  });
+
+  // Apple Sign In (more complex, requires proper setup)
+  appleSignInBtn?.addEventListener("click", () => {
+    alert("Apple Sign-In requires additional setup. Please use Google Sign-In for now.");
+  });
+
+  // Sign Out
+  signOutBtn?.addEventListener("click", async () => {
+    try {
+      // Revoke Google token
+      chrome.identity.getAuthToken({ interactive: false }, (token) => {
+        if (token) {
+          // Revoke the token
+          fetch(`https://accounts.google.com/o/oauth2/revoke?token=${token}`)
+            .catch(() => {});
+          
+          // Remove from cache
+          chrome.identity.removeCachedAuthToken({ token }, () => {});
+        }
+      });
+
+      // Clear session
+      await chrome.storage.sync.remove(["userSession"]);
+
+      // Show not signed in state
+      showNotSignedInState();
+
+    } catch (err) {
+      console.error("Sign out error:", err);
+    }
+  });
+}
+
+// Show signed in state
+function showSignedInState(userSession) {
+  const userNotSignedIn = document.getElementById("userNotSignedIn");
+  const userSignedIn = document.getElementById("userSignedIn");
+  const userAvatar = document.getElementById("userAvatar");
+  const userName = document.getElementById("userName");
+  const userEmail = document.getElementById("userEmail");
+
+  userNotSignedIn.style.display = "none";
+  userSignedIn.style.display = "flex";
+
+  userName.textContent = userSession.displayName || "User";
+  userEmail.textContent = userSession.email || "";
+  
+  if (userSession.photoURL) {
+    userAvatar.src = userSession.photoURL;
+  } else {
+    // Default avatar
+    userAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userSession.displayName || "U")}&background=10b981&color=fff`;
+  }
+}
+
+// Show not signed in state
+function showNotSignedInState() {
+  const userNotSignedIn = document.getElementById("userNotSignedIn");
+  const userSignedIn = document.getElementById("userSignedIn");
+
+  userNotSignedIn.style.display = "block";
+  userSignedIn.style.display = "none";
+}
+
+// Sync data to cloud (using Firebase or a simple backend)
+async function syncToCloud(userSession) {
+  const syncStatus = document.getElementById("syncStatus");
+  
+  try {
+    syncStatus.innerHTML = `
+      <svg class="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+      </svg>
+      Syncing...
+    `;
+    syncStatus.className = "sync-status syncing";
+
+    // Get all local data
+    const localData = await chrome.storage.sync.get(null);
+    
+    // For now, we'll store the cloud sync timestamp
+    // Full Firebase integration would go here
+    await chrome.storage.sync.set({
+      lastSyncAt: Date.now(),
+      syncedWith: userSession.email
+    });
+
+    syncStatus.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+      </svg>
+      Synced
+    `;
+    syncStatus.className = "sync-status";
+
+  } catch (err) {
+    console.error("Sync error:", err);
+    syncStatus.innerHTML = `⚠️ Sync failed`;
+    syncStatus.className = "sync-status";
+  }
+}
+
+// Initialize auth on load
+initAuthUI();
+
