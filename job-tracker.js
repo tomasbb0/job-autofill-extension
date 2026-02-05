@@ -1,947 +1,895 @@
-// Job Tracker Integration Module
-// Syncs with Firebase job tracker and provides todo/calendar features
-// Integrates with the job-tracker-collab app
+// Job Application Tracker Module
+// Self-contained job tracking system for the autofill extension
+// Data stored per-user in chrome.storage (with cloud sync when logged in)
+// CLEAN VERSION - does NOT connect to any external Firebase projects
 
 (function () {
   "use strict";
 
-  // Firebase configuration (from job-tracker-collab)
-  const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyAF36Th9wAoWMAvj0mVAw4GDdpkcx9sPVc",
-    authDomain: "job-tracker-tomas.firebaseapp.com",
-    databaseURL:
-      "https://job-tracker-tomas-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "job-tracker-tomas",
-    storageBucket: "job-tracker-tomas.firebasestorage.app",
-    messagingSenderId: "360707138428",
-    appId: "1:360707138428:web:543adb9605d2fbd702faf9",
-  };
-
   window.JobTracker = {
     // State
-    db: null,
     positions: [],
-    currentUser: null,
     isInitialized: false,
     panel: null,
 
-    // Status options (matching job-tracker-collab)
+    // Status pipeline
     STATUSES: [
-      { value: "not-started", label: "Not Started", color: "#fff", icon: "📋" },
-      {
-        value: "waiting-referral",
-        label: "Waiting Referral",
-        color: "#fffbeb",
-        icon: "⏳",
-      },
-      { value: "applied", label: "Applied", color: "#f0f9ff", icon: "📨" },
-      { value: "interview", label: "Interview", color: "#f0fdf4", icon: "🗣️" },
-      { value: "rejected", label: "Rejected", color: "#fef2f2", icon: "❌" },
+      { value: "not-started", label: "Not Started", color: "#f5f5f5", icon: "📋" },
+      { value: "researching", label: "Researching", color: "#fef3c7", icon: "🔍" },
+      { value: "waiting-referral", label: "Waiting Referral", color: "#fef9c3", icon: "⏳" },
+      { value: "applied", label: "Applied", color: "#dbeafe", icon: "📨" },
+      { value: "interview", label: "Interview", color: "#d1fae5", icon: "🗣️" },
       { value: "offer", label: "Offer", color: "#ecfdf5", icon: "🎉" },
+      { value: "rejected", label: "Rejected", color: "#fee2e2", icon: "❌" },
     ],
 
-    // Initialize Firebase connection
+    // Priority levels
+    PRIORITIES: [
+      { value: "low", label: "Low", color: "#6b7280" },
+      { value: "medium", label: "Medium", color: "#f59e0b" },
+      { value: "high", label: "High", color: "#ef4444" },
+    ],
+
+    // Initialize tracker
     async init() {
       if (this.isInitialized) return;
 
       try {
-        // Load Firebase scripts dynamically
-        await this.loadFirebaseScripts();
-
-        // Initialize Firebase
-        if (!firebase.apps.length) {
-          firebase.initializeApp(FIREBASE_CONFIG);
-        }
-        this.db = firebase.database();
-
-        // Get user from extension storage
-        const data = await chrome.storage.sync.get(["trackerUsername"]);
-        this.currentUser = data.trackerUsername || "Extension User";
-
-        // Start listening for positions
-        this.startPositionsListener();
-
+        // Load positions from storage
+        await this.loadPositions();
         this.isInitialized = true;
-        console.log("[JobTracker] Initialized successfully");
+        console.log("[JobTracker] Initialized with", this.positions.length, "positions");
       } catch (err) {
         console.error("[JobTracker] Init failed:", err);
       }
     },
 
-    // Load Firebase scripts
-    async loadFirebaseScripts() {
-      if (typeof firebase !== "undefined") return;
-
-      // Load Firebase App
-      await new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src =
-          "https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js";
-        script.onload = resolve;
-        script.onerror = reject;
-        document.head.appendChild(script);
-      });
-
-      // Load Firebase Database
-      await new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src =
-          "https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js";
-        script.onload = resolve;
-        script.onerror = reject;
-        document.head.appendChild(script);
-      });
+    // Load positions from chrome.storage
+    async loadPositions() {
+      try {
+        const data = await chrome.storage.sync.get(["jobTrackerPositions"]);
+        this.positions = data.jobTrackerPositions || [];
+      } catch (err) {
+        console.error("[JobTracker] Load failed:", err);
+        this.positions = [];
+      }
     },
 
-    // Start listening for positions updates
-    startPositionsListener() {
-      if (!this.db) return;
-
-      this.db.ref("positions").on("value", (snap) => {
-        const data = snap.val() || {};
-        const keys = Object.keys(data);
-        this.positions = keys.map((k) => ({ ...data[k], _key: k }));
-
-        // Update UI if panel is open
-        if (this.panel) {
-          this.renderPositionsList();
+    // Save positions to chrome.storage
+    async savePositions() {
+      try {
+        await chrome.storage.sync.set({ jobTrackerPositions: this.positions });
+        console.log("[JobTracker] Saved", this.positions.length, "positions");
+        
+        // Sync to cloud if user is logged in
+        if (window.AuthManager && window.AuthManager.isSignedIn()) {
+          window.AuthManager.uploadJobTrackerData();
         }
-
-        console.log(`[JobTracker] Synced ${this.positions.length} positions`);
-      });
+      } catch (err) {
+        console.error("[JobTracker] Save failed:", err);
+      }
     },
 
-    // Add current job to tracker
-    async addCurrentJob() {
-      if (!this.db) {
-        await this.init();
+    // Auto-detect and add job from current page
+    async addFromCurrentPage() {
+      const jobInfo = this.detectJobInfo();
+      
+      if (!jobInfo.company && !jobInfo.title) {
+        this.showNotification("Could not detect job info from this page", "error");
+        return null;
       }
 
-      // Extract job details from current page
-      const company = this.extractCompanyName();
-      const role = this.extractJobTitle();
-      const location = this.extractLocation();
-      const link = window.location.href;
-
-      // Check for duplicates
-      const duplicate = this.positions.find(
-        (p) =>
-          p.company?.toLowerCase() === company?.toLowerCase() &&
-          p.role?.toLowerCase() === role?.toLowerCase(),
+      // Check if already exists
+      const existing = this.positions.find(
+        p => p.company.toLowerCase() === jobInfo.company.toLowerCase() &&
+             p.title.toLowerCase() === jobInfo.title.toLowerCase()
       );
 
-      if (duplicate) {
-        return {
-          success: false,
-          message: "This job is already in your tracker!",
-        };
+      if (existing) {
+        this.showNotification(`Already tracking: ${jobInfo.title} at ${jobInfo.company}`, "info");
+        return existing;
       }
 
-      const newPos = {
-        company: company || "",
-        role: role || "",
-        location: location || "",
-        yearsExp: "",
-        link: link,
-        status: "not-started",
+      // Create new position
+      const position = {
+        id: Date.now().toString(),
+        company: jobInfo.company,
+        title: jobInfo.title,
+        url: window.location.href,
+        status: "applied",
+        priority: "medium",
         notes: "",
-        priority: false,
-        createdAt: Date.now(),
-        addedBy: this.currentUser,
-        addedFrom: "extension",
+        dateAdded: new Date().toISOString(),
+        dateApplied: new Date().toISOString(),
+        dateUpdated: new Date().toISOString(),
+        source: "auto-detected",
       };
 
-      try {
-        await this.db.ref("positions").push(newPos);
-        await this.logHistory(`added "${role}" at "${company}" via extension`);
-        return { success: true, message: "Job added to tracker!" };
-      } catch (err) {
-        console.error("[JobTracker] Add failed:", err);
-        return { success: false, message: "Failed to add job: " + err.message };
-      }
+      this.positions.unshift(position);
+      await this.savePositions();
+
+      this.showNotification(`Added: ${position.title} at ${position.company}`, "success");
+      return position;
     },
 
-    // Update position status
-    async updateStatus(posKey, newStatus) {
-      if (!this.db) return;
+    // Detect job info from current page
+    detectJobInfo() {
+      const info = {
+        company: "",
+        title: "",
+      };
 
-      try {
-        await this.db.ref("positions/" + posKey + "/status").set(newStatus);
-        const pos = this.positions.find((p) => p._key === posKey);
-        await this.logHistory(`changed "${pos?.role}" status to ${newStatus}`);
-        return true;
-      } catch (err) {
-        console.error("[JobTracker] Update failed:", err);
-        return false;
+      // Common job board patterns
+      const url = window.location.href.toLowerCase();
+      const pageTitle = document.title;
+
+      // Workday
+      if (url.includes("workday")) {
+        const companyMatch = url.match(/([^/]+)\.wd\d+\.myworkdayjobs/);
+        if (companyMatch) info.company = this.formatCompanyName(companyMatch[1]);
+        
+        const titleEl = document.querySelector('[data-automation-id="jobPostingHeader"] h2, .css-1j389vi');
+        if (titleEl) info.title = titleEl.textContent.trim();
       }
+
+      // Greenhouse
+      if (url.includes("greenhouse.io") || url.includes("boards.greenhouse")) {
+        const companyMatch = url.match(/boards\.greenhouse\.io\/([^/]+)/);
+        if (companyMatch) info.company = this.formatCompanyName(companyMatch[1]);
+        
+        const titleEl = document.querySelector('h1.app-title, .job-title');
+        if (titleEl) info.title = titleEl.textContent.trim();
+      }
+
+      // Lever
+      if (url.includes("lever.co")) {
+        const companyMatch = url.match(/jobs\.lever\.co\/([^/]+)/);
+        if (companyMatch) info.company = this.formatCompanyName(companyMatch[1]);
+        
+        const titleEl = document.querySelector('.posting-headline h2');
+        if (titleEl) info.title = titleEl.textContent.trim();
+      }
+
+      // LinkedIn
+      if (url.includes("linkedin.com/jobs")) {
+        const companyEl = document.querySelector('.jobs-unified-top-card__company-name, .topcard__org-name-link');
+        if (companyEl) info.company = companyEl.textContent.trim();
+        
+        const titleEl = document.querySelector('.jobs-unified-top-card__job-title, .topcard__title');
+        if (titleEl) info.title = titleEl.textContent.trim();
+      }
+
+      // Generic fallback - try to extract from page
+      if (!info.company || !info.title) {
+        // Look for common patterns
+        const h1 = document.querySelector('h1');
+        if (h1 && !info.title) info.title = h1.textContent.trim().substring(0, 100);
+
+        // Try to get company from meta tags or structured data
+        const orgMeta = document.querySelector('meta[property="og:site_name"], meta[name="author"]');
+        if (orgMeta && !info.company) info.company = orgMeta.content;
+
+        // Try JSON-LD
+        const ldScripts = document.querySelectorAll('script[type="application/ld+json"]');
+        ldScripts.forEach(script => {
+          try {
+            const data = JSON.parse(script.textContent);
+            if (data["@type"] === "JobPosting") {
+              if (!info.title && data.title) info.title = data.title;
+              if (!info.company && data.hiringOrganization?.name) {
+                info.company = data.hiringOrganization.name;
+              }
+            }
+          } catch (e) {}
+        });
+      }
+
+      return info;
+    },
+
+    // Format company name nicely
+    formatCompanyName(name) {
+      return name
+        .replace(/-/g, " ")
+        .replace(/_/g, " ")
+        .split(" ")
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(" ");
+    },
+
+    // Add position manually
+    async addPosition(company, title, url = "", status = "not-started", priority = "medium") {
+      const position = {
+        id: Date.now().toString(),
+        company,
+        title,
+        url: url || window.location.href,
+        status,
+        priority,
+        notes: "",
+        dateAdded: new Date().toISOString(),
+        dateApplied: status === "applied" ? new Date().toISOString() : null,
+        dateUpdated: new Date().toISOString(),
+        source: "manual",
+      };
+
+      this.positions.unshift(position);
+      await this.savePositions();
+      return position;
+    },
+
+    // Update position
+    async updatePosition(id, updates) {
+      const index = this.positions.findIndex(p => p.id === id);
+      if (index === -1) return null;
+
+      this.positions[index] = {
+        ...this.positions[index],
+        ...updates,
+        dateUpdated: new Date().toISOString(),
+      };
+
+      // If status changed to applied, set dateApplied
+      if (updates.status === "applied" && !this.positions[index].dateApplied) {
+        this.positions[index].dateApplied = new Date().toISOString();
+      }
+
+      await this.savePositions();
+      return this.positions[index];
     },
 
     // Delete position
-    async deletePosition(posKey) {
-      if (!this.db) return;
-
-      try {
-        const pos = this.positions.find((p) => p._key === posKey);
-        await this.db.ref("positions/" + posKey).remove();
-        await this.logHistory(`deleted "${pos?.role}" at "${pos?.company}"`);
-        return true;
-      } catch (err) {
-        console.error("[JobTracker] Delete failed:", err);
-        return false;
-      }
+    async deletePosition(id) {
+      this.positions = this.positions.filter(p => p.id !== id);
+      await this.savePositions();
     },
 
-    // Log history
-    async logHistory(action) {
-      if (!this.db) return;
-
-      try {
-        await this.db.ref("history").push({
-          user: this.currentUser,
-          action: action,
-          timestamp: Date.now(),
-        });
-      } catch (err) {
-        console.error("[JobTracker] Log history failed:", err);
-      }
+    // Get positions by status
+    getPositionsByStatus(status) {
+      return this.positions.filter(p => p.status === status);
     },
 
-    // Extract job details from page
-    extractCompanyName() {
-      const selectors = [
-        '[data-automation-id="company"]',
-        ".company-name",
-        '[itemprop="hiringOrganization"]',
-        ".employer-name",
-        'meta[property="og:site_name"]',
-      ];
+    // Get statistics
+    getStats() {
+      const stats = {
+        total: this.positions.length,
+        byStatus: {},
+        thisWeek: 0,
+        thisMonth: 0,
+      };
 
-      for (const sel of selectors) {
-        const el = document.querySelector(sel);
-        if (el) {
-          const text = el.content || el.textContent;
-          if (text?.trim()) return text.trim();
-        }
-      }
+      const now = new Date();
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-      // Try from page title
-      const title = document.title;
-      const match = title.match(/(?:at|@|\||-)\s*([^|–-]+?)(?:\s*\||\s*-|$)/i);
-      if (match) return match[1].trim();
+      this.STATUSES.forEach(s => stats.byStatus[s.value] = 0);
 
-      // Try from URL
-      const hostname = window.location.hostname;
-      const parts = hostname.split(".");
-      if (parts.length >= 2) {
-        return (
-          parts[parts.length - 2].charAt(0).toUpperCase() +
-          parts[parts.length - 2].slice(1)
-        );
-      }
+      this.positions.forEach(p => {
+        stats.byStatus[p.status] = (stats.byStatus[p.status] || 0) + 1;
+        
+        const addedDate = new Date(p.dateAdded);
+        if (addedDate >= weekAgo) stats.thisWeek++;
+        if (addedDate >= monthAgo) stats.thisMonth++;
+      });
 
-      return "";
+      return stats;
     },
 
-    extractJobTitle() {
-      const selectors = [
-        '[data-automation-id="jobPostingTitle"]',
-        ".job-title",
-        '[itemprop="title"]',
-        "h1",
-        ".posting-headline h2",
-      ];
-
-      for (const sel of selectors) {
-        const el = document.querySelector(sel);
-        if (el && el.textContent?.trim()) {
-          return el.textContent.trim().substring(0, 100);
-        }
-      }
-
-      return "";
-    },
-
-    extractLocation() {
-      const selectors = [
-        '[data-automation-id="location"]',
-        ".job-location",
-        '[itemprop="jobLocation"]',
-        ".location",
-      ];
-
-      for (const sel of selectors) {
-        const el = document.querySelector(sel);
-        if (el && el.textContent?.trim()) {
-          return el.textContent.trim();
-        }
-      }
-
-      return "";
-    },
-
-    // Create and show the job tracker panel
+    // Create tracker panel UI
     createTrackerPanel() {
-      if (this.panel) {
-        this.panel.remove();
+      // Remove existing panel
+      const existing = document.getElementById("jaf-job-tracker-panel");
+      if (existing) {
+        existing.remove();
+        return;
       }
 
       const panel = document.createElement("div");
-      panel.className = "jaf-tracker-panel";
-      panel.innerHTML = `
-        <div class="jaf-tracker-header">
-          <span>📋 Job Tracker</span>
-          <div class="jaf-tracker-header-actions">
-            <button class="jaf-tracker-refresh" title="Refresh">🔄</button>
-            <button class="jaf-tracker-close">×</button>
-          </div>
-        </div>
-        <div class="jaf-tracker-body">
-          <div class="jaf-tracker-actions">
-            <button class="jaf-tracker-add-btn">
-              ➕ Add This Job
-            </button>
-            <button class="jaf-tracker-open-btn">
-              📊 Open Full Tracker
-            </button>
-          </div>
-          <div class="jaf-tracker-tabs">
-            <button class="jaf-tracker-tab active" data-tab="todo">📝 To Apply</button>
-            <button class="jaf-tracker-tab" data-tab="applied">📨 Applied</button>
-            <button class="jaf-tracker-tab" data-tab="calendar">📅 Calendar</button>
-          </div>
-          <div class="jaf-tracker-content">
-            <div class="jaf-tracker-list" data-content="todo"></div>
-            <div class="jaf-tracker-list jaf-hidden" data-content="applied"></div>
-            <div class="jaf-tracker-calendar jaf-hidden" data-content="calendar"></div>
-          </div>
-        </div>
-      `;
-
+      panel.id = "jaf-job-tracker-panel";
+      panel.innerHTML = this.getPanelHTML();
+      
       // Add styles
-      this.addStyles();
+      const style = document.createElement("style");
+      style.textContent = this.getPanelStyles();
+      panel.appendChild(style);
 
       document.body.appendChild(panel);
       this.panel = panel;
 
-      // Event listeners
-      panel
-        .querySelector(".jaf-tracker-close")
-        .addEventListener("click", () => {
-          this.closePanel();
+      // Setup event listeners
+      this.setupPanelEvents();
+
+      // Render positions
+      this.renderPositions();
+    },
+
+    // Get panel HTML
+    getPanelHTML() {
+      const stats = this.getStats();
+
+      return `
+        <div class="jaft-header">
+          <div class="jaft-header-left">
+            <span class="jaft-logo">📊</span>
+            <div>
+              <h3>Job Tracker</h3>
+              <span class="jaft-subtitle">${stats.total} applications tracked</span>
+            </div>
+          </div>
+          <div class="jaft-header-right">
+            <button class="jaft-btn jaft-add-current" title="Add current page">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+              </svg>
+              Add This Job
+            </button>
+            <button class="jaft-close" title="Close">×</button>
+          </div>
+        </div>
+
+        <div class="jaft-stats">
+          ${this.STATUSES.slice(0, 5).map(s => `
+            <div class="jaft-stat" style="background: ${s.color}">
+              <span class="jaft-stat-icon">${s.icon}</span>
+              <span class="jaft-stat-count">${stats.byStatus[s.value] || 0}</span>
+              <span class="jaft-stat-label">${s.label}</span>
+            </div>
+          `).join("")}
+        </div>
+
+        <div class="jaft-filters">
+          <select class="jaft-filter-status">
+            <option value="">All Statuses</option>
+            ${this.STATUSES.map(s => `<option value="${s.value}">${s.icon} ${s.label}</option>`).join("")}
+          </select>
+          <input type="text" class="jaft-search" placeholder="Search jobs...">
+        </div>
+
+        <div class="jaft-list"></div>
+
+        <div class="jaft-footer">
+          <button class="jaft-btn jaft-export">Export CSV</button>
+          <span class="jaft-footer-text">This week: ${stats.thisWeek} | This month: ${stats.thisMonth}</span>
+        </div>
+      `;
+    },
+
+    // Get panel styles
+    getPanelStyles() {
+      return `
+        #jaf-job-tracker-panel {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 600px;
+          max-width: 95vw;
+          max-height: 80vh;
+          background: #fff;
+          border-radius: 16px;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+          z-index: 2147483647;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+        .jaft-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 16px 20px;
+          border-bottom: 1px solid #eee;
+          background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+          color: #fff;
+        }
+        .jaft-header-left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .jaft-logo {
+          font-size: 24px;
+        }
+        .jaft-header h3 {
+          margin: 0;
+          font-size: 16px;
+          font-weight: 600;
+        }
+        .jaft-subtitle {
+          font-size: 11px;
+          opacity: 0.8;
+        }
+        .jaft-header-right {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .jaft-btn {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 14px;
+          border: none;
+          border-radius: 8px;
+          font-size: 12px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .jaft-add-current {
+          background: rgba(255,255,255,0.2);
+          color: #fff;
+        }
+        .jaft-add-current:hover {
+          background: rgba(255,255,255,0.3);
+        }
+        .jaft-close {
+          background: none;
+          border: none;
+          color: #fff;
+          font-size: 24px;
+          cursor: pointer;
+          opacity: 0.8;
+          padding: 0 4px;
+        }
+        .jaft-close:hover {
+          opacity: 1;
+        }
+        .jaft-stats {
+          display: flex;
+          gap: 8px;
+          padding: 12px 16px;
+          overflow-x: auto;
+          background: #fafafa;
+        }
+        .jaft-stat {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 10px 16px;
+          border-radius: 10px;
+          min-width: 80px;
+        }
+        .jaft-stat-icon {
+          font-size: 18px;
+        }
+        .jaft-stat-count {
+          font-size: 20px;
+          font-weight: 700;
+          color: #333;
+        }
+        .jaft-stat-label {
+          font-size: 10px;
+          color: #666;
+          text-align: center;
+        }
+        .jaft-filters {
+          display: flex;
+          gap: 10px;
+          padding: 12px 16px;
+          border-bottom: 1px solid #eee;
+        }
+        .jaft-filter-status {
+          padding: 8px 12px;
+          border: 1px solid #e0e0e0;
+          border-radius: 8px;
+          font-size: 12px;
+          min-width: 140px;
+        }
+        .jaft-search {
+          flex: 1;
+          padding: 8px 12px;
+          border: 1px solid #e0e0e0;
+          border-radius: 8px;
+          font-size: 12px;
+        }
+        .jaft-list {
+          flex: 1;
+          overflow-y: auto;
+          padding: 12px 16px;
+          max-height: 300px;
+        }
+        .jaft-job {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px;
+          background: #f9f9f9;
+          border-radius: 10px;
+          margin-bottom: 8px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .jaft-job:hover {
+          background: #f0f0f0;
+        }
+        .jaft-job-icon {
+          font-size: 20px;
+        }
+        .jaft-job-info {
+          flex: 1;
+        }
+        .jaft-job-title {
+          font-weight: 600;
+          font-size: 13px;
+          color: #333;
+          margin-bottom: 2px;
+        }
+        .jaft-job-company {
+          font-size: 11px;
+          color: #666;
+        }
+        .jaft-job-date {
+          font-size: 10px;
+          color: #999;
+        }
+        .jaft-job-status {
+          padding: 4px 10px;
+          border-radius: 12px;
+          font-size: 10px;
+          font-weight: 500;
+        }
+        .jaft-job-actions {
+          display: flex;
+          gap: 6px;
+        }
+        .jaft-job-actions button {
+          padding: 6px 8px;
+          border: none;
+          background: #e5e5e5;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 10px;
+        }
+        .jaft-job-actions button:hover {
+          background: #d0d0d0;
+        }
+        .jaft-empty {
+          text-align: center;
+          padding: 40px 20px;
+          color: #888;
+        }
+        .jaft-empty-icon {
+          font-size: 48px;
+          margin-bottom: 12px;
+        }
+        .jaft-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px 16px;
+          border-top: 1px solid #eee;
+          background: #fafafa;
+        }
+        .jaft-export {
+          background: #10b981;
+          color: #fff;
+        }
+        .jaft-export:hover {
+          background: #059669;
+        }
+        .jaft-footer-text {
+          font-size: 11px;
+          color: #888;
+        }
+      `;
+    },
+
+    // Setup panel event listeners
+    setupPanelEvents() {
+      if (!this.panel) return;
+
+      // Close button
+      this.panel.querySelector(".jaft-close")?.addEventListener("click", () => {
+        this.panel.remove();
+        this.panel = null;
+      });
+
+      // Add current job
+      this.panel.querySelector(".jaft-add-current")?.addEventListener("click", async () => {
+        await this.addFromCurrentPage();
+        this.renderPositions();
+      });
+
+      // Filter by status
+      this.panel.querySelector(".jaft-filter-status")?.addEventListener("change", (e) => {
+        this.renderPositions(e.target.value, this.panel.querySelector(".jaft-search").value);
+      });
+
+      // Search
+      this.panel.querySelector(".jaft-search")?.addEventListener("input", (e) => {
+        this.renderPositions(this.panel.querySelector(".jaft-filter-status").value, e.target.value);
+      });
+
+      // Export
+      this.panel.querySelector(".jaft-export")?.addEventListener("click", () => {
+        this.exportToCSV();
+      });
+    },
+
+    // Render positions list
+    renderPositions(statusFilter = "", searchQuery = "") {
+      const listEl = this.panel?.querySelector(".jaft-list");
+      if (!listEl) return;
+
+      let positions = [...this.positions];
+
+      // Filter by status
+      if (statusFilter) {
+        positions = positions.filter(p => p.status === statusFilter);
+      }
+
+      // Filter by search
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        positions = positions.filter(p => 
+          p.company.toLowerCase().includes(query) ||
+          p.title.toLowerCase().includes(query)
+        );
+      }
+
+      if (positions.length === 0) {
+        listEl.innerHTML = `
+          <div class="jaft-empty">
+            <div class="jaft-empty-icon">📋</div>
+            <p>${this.positions.length === 0 ? "No jobs tracked yet" : "No matching jobs"}</p>
+            <p style="font-size: 11px; margin-top: 8px;">
+              ${this.positions.length === 0 ? 'Click "Add This Job" on a job posting page' : "Try a different filter"}
+            </p>
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = positions.map(p => {
+        const status = this.STATUSES.find(s => s.value === p.status) || this.STATUSES[0];
+        const dateStr = new Date(p.dateAdded).toLocaleDateString();
+
+        return `
+          <div class="jaft-job" data-id="${p.id}">
+            <span class="jaft-job-icon">${status.icon}</span>
+            <div class="jaft-job-info">
+              <div class="jaft-job-title">${this.escapeHtml(p.title)}</div>
+              <div class="jaft-job-company">${this.escapeHtml(p.company)}</div>
+              <div class="jaft-job-date">Added ${dateStr}</div>
+            </div>
+            <span class="jaft-job-status" style="background: ${status.color}; color: #333;">
+              ${status.label}
+            </span>
+            <div class="jaft-job-actions">
+              <button class="jaft-job-open" data-url="${p.url}" title="Open job page">🔗</button>
+              <button class="jaft-job-delete" data-id="${p.id}" title="Delete">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // Add click handlers
+      listEl.querySelectorAll(".jaft-job-open").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          window.open(btn.dataset.url, "_blank");
         });
+      });
 
-      panel
-        .querySelector(".jaf-tracker-refresh")
-        .addEventListener("click", async () => {
-          await this.init();
-          this.renderPositionsList();
-        });
-
-      panel
-        .querySelector(".jaf-tracker-add-btn")
-        .addEventListener("click", async () => {
-          const btn = panel.querySelector(".jaf-tracker-add-btn");
-          btn.disabled = true;
-          btn.textContent = "⏳ Adding...";
-
-          const result = await this.addCurrentJob();
-
-          btn.disabled = false;
-          btn.textContent = "➕ Add This Job";
-
-          this.showNotification(
-            result.message,
-            result.success ? "success" : "error",
-          );
-        });
-
-      panel
-        .querySelector(".jaf-tracker-open-btn")
-        .addEventListener("click", () => {
-          window.open("https://job-tracker-tomas.netlify.app/", "_blank");
-        });
-
-      // Tab switching
-      panel.querySelectorAll(".jaf-tracker-tab").forEach((tab) => {
-        tab.addEventListener("click", () => {
-          panel
-            .querySelectorAll(".jaf-tracker-tab")
-            .forEach((t) => t.classList.remove("active"));
-          tab.classList.add("active");
-
-          const tabName = tab.dataset.tab;
-          panel.querySelectorAll("[data-content]").forEach((content) => {
-            content.classList.toggle(
-              "jaf-hidden",
-              content.dataset.content !== tabName,
-            );
-          });
-
-          if (tabName === "calendar") {
-            this.renderCalendar();
+      listEl.querySelectorAll(".jaft-job-delete").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          if (confirm("Delete this job?")) {
+            await this.deletePosition(btn.dataset.id);
+            this.renderPositions(statusFilter, searchQuery);
           }
         });
       });
 
-      // Initialize
-      this.init().then(() => {
-        this.renderPositionsList();
+      // Click on job to change status
+      listEl.querySelectorAll(".jaft-job").forEach(el => {
+        el.addEventListener("click", () => {
+          this.showStatusMenu(el.dataset.id);
+        });
       });
-
-      return panel;
     },
 
-    // Render positions list
-    renderPositionsList() {
+    // Show status change menu
+    showStatusMenu(positionId) {
+      const position = this.positions.find(p => p.id === positionId);
+      if (!position) return;
+
+      const menu = document.createElement("div");
+      menu.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        padding: 16px;
+        z-index: 2147483648;
+        min-width: 200px;
+      `;
+
+      menu.innerHTML = `
+        <div style="font-weight: 600; margin-bottom: 12px;">Update Status</div>
+        ${this.STATUSES.map(s => `
+          <button data-status="${s.value}" style="
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            padding: 10px 12px;
+            border: none;
+            background: ${s.value === position.status ? '#f0f0f0' : 'transparent'};
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 13px;
+            margin-bottom: 4px;
+          ">
+            ${s.icon} ${s.label}
+          </button>
+        `).join("")}
+        <button class="jaft-menu-close" style="
+          width: 100%;
+          padding: 10px;
+          margin-top: 8px;
+          border: 1px solid #e0e0e0;
+          background: #fff;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 12px;
+        ">Cancel</button>
+      `;
+
+      document.body.appendChild(menu);
+
+      // Status buttons
+      menu.querySelectorAll("[data-status]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          await this.updatePosition(positionId, { status: btn.dataset.status });
+          menu.remove();
+          this.renderPositions();
+          this.updatePanelStats();
+        });
+      });
+
+      // Close button
+      menu.querySelector(".jaft-menu-close")?.addEventListener("click", () => menu.remove());
+
+      // Click outside to close
+      setTimeout(() => {
+        document.addEventListener("click", function closeMenu(e) {
+          if (!menu.contains(e.target)) {
+            menu.remove();
+            document.removeEventListener("click", closeMenu);
+          }
+        });
+      }, 100);
+    },
+
+    // Update panel stats
+    updatePanelStats() {
       if (!this.panel) return;
-
-      const todoList = this.panel.querySelector('[data-content="todo"]');
-      const appliedList = this.panel.querySelector('[data-content="applied"]');
-
-      // Filter positions
-      const toApply = this.positions
-        .filter(
-          (p) => p.status === "not-started" || p.status === "waiting-referral",
-        )
-        .sort(
-          (a, b) =>
-            (b.priority ? 1 : 0) - (a.priority ? 1 : 0) ||
-            (b.createdAt || 0) - (a.createdAt || 0),
-        );
-
-      const applied = this.positions
-        .filter(
-          (p) =>
-            p.status === "applied" ||
-            p.status === "interview" ||
-            p.status === "offer",
-        )
-        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
-      // Render To Apply
-      if (toApply.length === 0) {
-        todoList.innerHTML =
-          '<div class="jaf-tracker-empty">No jobs to apply yet. Add some!</div>';
-      } else {
-        todoList.innerHTML = toApply
-          .map((pos) => this.renderPositionCard(pos))
-          .join("");
-      }
-
-      // Render Applied
-      if (applied.length === 0) {
-        appliedList.innerHTML =
-          '<div class="jaf-tracker-empty">No applications yet.</div>';
-      } else {
-        appliedList.innerHTML = applied
-          .map((pos) => this.renderPositionCard(pos))
-          .join("");
-      }
-
-      // Add event listeners
-      this.panel.querySelectorAll(".jaf-tracker-card").forEach((card) => {
-        const key = card.dataset.key;
-
-        card
-          .querySelector(".jaf-tracker-status")
-          .addEventListener("change", async (e) => {
-            await this.updateStatus(key, e.target.value);
-          });
-
-        card
-          .querySelector(".jaf-tracker-delete")
-          ?.addEventListener("click", async () => {
-            if (confirm("Delete this position?")) {
-              await this.deletePosition(key);
-            }
-          });
-
-        card
-          .querySelector(".jaf-tracker-open-link")
-          ?.addEventListener("click", () => {
-            const pos = this.positions.find((p) => p._key === key);
-            if (pos?.link) {
-              window.open(pos.link, "_blank");
-            }
-          });
-      });
+      
+      const stats = this.getStats();
+      
+      // Update header subtitle
+      const subtitle = this.panel.querySelector(".jaft-subtitle");
+      if (subtitle) subtitle.textContent = `${stats.total} applications tracked`;
     },
 
-    // Render single position card
-    renderPositionCard(pos) {
-      const status =
-        this.STATUSES.find((s) => s.value === pos.status) || this.STATUSES[0];
+    // Export to CSV
+    exportToCSV() {
+      const headers = ["Company", "Title", "Status", "Priority", "URL", "Date Added", "Date Applied", "Notes"];
+      const rows = this.positions.map(p => [
+        p.company,
+        p.title,
+        p.status,
+        p.priority,
+        p.url,
+        p.dateAdded,
+        p.dateApplied || "",
+        p.notes
+      ]);
 
-      return `
-        <div class="jaf-tracker-card" data-key="${pos._key}" style="background: ${status.color}">
-          <div class="jaf-tracker-card-header">
-            <div class="jaf-tracker-company">${pos.company || "Unknown Company"}</div>
-            ${pos.priority ? '<span class="jaf-tracker-priority">⭐</span>' : ""}
-          </div>
-          <div class="jaf-tracker-role">${pos.role || "Unknown Role"}</div>
-          ${pos.location ? `<div class="jaf-tracker-location">📍 ${pos.location}</div>` : ""}
-          <div class="jaf-tracker-card-footer">
-            <select class="jaf-tracker-status" value="${pos.status}">
-              ${this.STATUSES.map(
-                (s) => `
-                <option value="${s.value}" ${s.value === pos.status ? "selected" : ""}>
-                  ${s.icon} ${s.label}
-                </option>
-              `,
-              ).join("")}
-            </select>
-            <div class="jaf-tracker-card-actions">
-              ${pos.link ? '<button class="jaf-tracker-open-link" title="Open">🔗</button>' : ""}
-              <button class="jaf-tracker-delete" title="Delete">🗑️</button>
-            </div>
-          </div>
-        </div>
-      `;
-    },
+      const csv = [
+        headers.join(","),
+        ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      ].join("\n");
 
-    // Render calendar view
-    renderCalendar() {
-      const calendarEl = this.panel?.querySelector('[data-content="calendar"]');
-      if (!calendarEl) return;
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `job-tracker-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
 
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = today.getMonth();
-
-      // Get applications with dates
-      const applications = this.positions
-        .filter((p) => p.status === "applied" || p.status === "interview")
-        .map((p) => ({
-          ...p,
-          date: new Date(p.createdAt || Date.now()),
-        }));
-
-      // Build calendar grid
-      const firstDay = new Date(year, month, 1);
-      const lastDay = new Date(year, month + 1, 0);
-      const startDay = firstDay.getDay();
-      const totalDays = lastDay.getDate();
-
-      const monthNames = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-      ];
-
-      let html = `
-        <div class="jaf-calendar-header">
-          <strong>${monthNames[month]} ${year}</strong>
-        </div>
-        <div class="jaf-calendar-grid">
-          <div class="jaf-calendar-day-header">Sun</div>
-          <div class="jaf-calendar-day-header">Mon</div>
-          <div class="jaf-calendar-day-header">Tue</div>
-          <div class="jaf-calendar-day-header">Wed</div>
-          <div class="jaf-calendar-day-header">Thu</div>
-          <div class="jaf-calendar-day-header">Fri</div>
-          <div class="jaf-calendar-day-header">Sat</div>
-      `;
-
-      // Empty cells before first day
-      for (let i = 0; i < startDay; i++) {
-        html += '<div class="jaf-calendar-day empty"></div>';
-      }
-
-      // Days of month
-      for (let day = 1; day <= totalDays; day++) {
-        const isToday = day === today.getDate() && month === today.getMonth();
-        const dayApps = applications.filter(
-          (a) =>
-            a.date.getDate() === day &&
-            a.date.getMonth() === month &&
-            a.date.getFullYear() === year,
-        );
-
-        html += `
-          <div class="jaf-calendar-day ${isToday ? "today" : ""} ${dayApps.length > 0 ? "has-events" : ""}">
-            <span class="jaf-calendar-day-num">${day}</span>
-            ${dayApps.length > 0 ? `<span class="jaf-calendar-events">${dayApps.length}</span>` : ""}
-          </div>
-        `;
-      }
-
-      html += "</div>";
-
-      // Upcoming interviews
-      const upcoming = applications
-        .filter((a) => a.status === "interview" && a.date >= today)
-        .slice(0, 5);
-
-      if (upcoming.length > 0) {
-        html += `
-          <div class="jaf-calendar-upcoming">
-            <strong>🗣️ Upcoming Interviews</strong>
-            ${upcoming
-              .map(
-                (a) => `
-              <div class="jaf-calendar-event">
-                <span>${a.company} - ${a.role}</span>
-              </div>
-            `,
-              )
-              .join("")}
-          </div>
-        `;
-      }
-
-      calendarEl.innerHTML = html;
-    },
-
-    // Close panel
-    closePanel() {
-      if (this.panel) {
-        this.panel.remove();
-        this.panel = null;
-      }
+      this.showNotification("Exported to CSV", "success");
     },
 
     // Show notification
-    showNotification(message, type = "success") {
+    showNotification(message, type = "info") {
       const notif = document.createElement("div");
-      notif.className = "jaf-tracker-notification";
-      notif.style.background = type === "success" ? "#22c55e" : "#ef4444";
+      const colors = {
+        success: { bg: "#d1fae5", border: "#10b981", text: "#065f46" },
+        error: { bg: "#fee2e2", border: "#ef4444", text: "#991b1b" },
+        info: { bg: "#dbeafe", border: "#3b82f6", text: "#1e40af" },
+      };
+      const c = colors[type] || colors.info;
+
+      notif.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        background: ${c.bg};
+        border: 1px solid ${c.border};
+        color: ${c.text};
+        border-radius: 10px;
+        font-size: 13px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        z-index: 2147483647;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        animation: slideIn 0.3s ease-out;
+      `;
       notif.textContent = message;
       document.body.appendChild(notif);
 
       setTimeout(() => {
         notif.style.opacity = "0";
+        notif.style.transition = "opacity 0.3s";
         setTimeout(() => notif.remove(), 300);
       }, 3000);
     },
 
-    // Add styles
-    addStyles() {
-      if (document.getElementById("jaf-tracker-styles")) return;
-
-      const style = document.createElement("style");
-      style.id = "jaf-tracker-styles";
-      style.textContent = `
-        .jaf-tracker-panel {
-          position: fixed;
-          top: 80px;
-          right: 20px;
-          width: 380px;
-          max-height: 600px;
-          background: white;
-          border-radius: 16px;
-          box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-          z-index: 999998;
-          font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-          font-size: 13px;
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-        }
-        
-        .jaf-tracker-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 16px 20px;
-          background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
-          color: white;
-          font-weight: 600;
-          font-size: 15px;
-        }
-        
-        .jaf-tracker-header-actions {
-          display: flex;
-          gap: 8px;
-        }
-        
-        .jaf-tracker-header-actions button {
-          background: rgba(255,255,255,0.2);
-          border: none;
-          color: white;
-          width: 28px;
-          height: 28px;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 14px;
-        }
-        
-        .jaf-tracker-header-actions button:hover {
-          background: rgba(255,255,255,0.3);
-        }
-        
-        .jaf-tracker-body {
-          flex: 1;
-          overflow-y: auto;
-          padding: 16px;
-        }
-        
-        .jaf-tracker-actions {
-          display: flex;
-          gap: 8px;
-          margin-bottom: 16px;
-        }
-        
-        .jaf-tracker-add-btn,
-        .jaf-tracker-open-btn {
-          flex: 1;
-          padding: 10px 16px;
-          border: none;
-          border-radius: 8px;
-          font-size: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        
-        .jaf-tracker-add-btn {
-          background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-          color: white;
-        }
-        
-        .jaf-tracker-open-btn {
-          background: #f5f5f5;
-          color: #333;
-        }
-        
-        .jaf-tracker-add-btn:hover,
-        .jaf-tracker-open-btn:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        
-        .jaf-tracker-tabs {
-          display: flex;
-          gap: 0;
-          margin-bottom: 16px;
-          border-bottom: 1px solid #e5e5e5;
-        }
-        
-        .jaf-tracker-tab {
-          flex: 1;
-          padding: 10px;
-          border: none;
-          background: none;
-          font-size: 12px;
-          font-weight: 500;
-          color: #888;
-          cursor: pointer;
-          border-bottom: 2px solid transparent;
-          margin-bottom: -1px;
-          transition: all 0.2s;
-        }
-        
-        .jaf-tracker-tab.active {
-          color: #8b5cf6;
-          border-bottom-color: #8b5cf6;
-        }
-        
-        .jaf-tracker-tab:hover {
-          color: #333;
-        }
-        
-        .jaf-tracker-list {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
-        
-        .jaf-tracker-empty {
-          text-align: center;
-          color: #888;
-          padding: 40px 20px;
-        }
-        
-        .jaf-tracker-card {
-          padding: 12px;
-          border-radius: 10px;
-          border: 1px solid #e5e5e5;
-        }
-        
-        .jaf-tracker-card-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 4px;
-        }
-        
-        .jaf-tracker-company {
-          font-weight: 600;
-          font-size: 14px;
-        }
-        
-        .jaf-tracker-priority {
-          font-size: 12px;
-        }
-        
-        .jaf-tracker-role {
-          color: #666;
-          margin-bottom: 4px;
-        }
-        
-        .jaf-tracker-location {
-          font-size: 11px;
-          color: #888;
-          margin-bottom: 8px;
-        }
-        
-        .jaf-tracker-card-footer {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 8px;
-        }
-        
-        .jaf-tracker-status {
-          flex: 1;
-          padding: 6px 10px;
-          border: 1px solid #e5e5e5;
-          border-radius: 6px;
-          font-size: 11px;
-          cursor: pointer;
-        }
-        
-        .jaf-tracker-card-actions {
-          display: flex;
-          gap: 4px;
-        }
-        
-        .jaf-tracker-card-actions button {
-          background: none;
-          border: none;
-          cursor: pointer;
-          font-size: 14px;
-          padding: 4px;
-          border-radius: 4px;
-        }
-        
-        .jaf-tracker-card-actions button:hover {
-          background: rgba(0,0,0,0.05);
-        }
-        
-        .jaf-calendar-header {
-          text-align: center;
-          margin-bottom: 12px;
-        }
-        
-        .jaf-calendar-grid {
-          display: grid;
-          grid-template-columns: repeat(7, 1fr);
-          gap: 4px;
-        }
-        
-        .jaf-calendar-day-header {
-          text-align: center;
-          font-size: 10px;
-          font-weight: 600;
-          color: #888;
-          padding: 4px;
-        }
-        
-        .jaf-calendar-day {
-          aspect-ratio: 1;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          font-size: 12px;
-          border-radius: 6px;
-          position: relative;
-        }
-        
-        .jaf-calendar-day.empty {
-          background: none;
-        }
-        
-        .jaf-calendar-day.today {
-          background: #8b5cf6;
-          color: white;
-        }
-        
-        .jaf-calendar-day.has-events {
-          background: #ede9fe;
-        }
-        
-        .jaf-calendar-events {
-          position: absolute;
-          bottom: 2px;
-          right: 2px;
-          background: #8b5cf6;
-          color: white;
-          font-size: 8px;
-          width: 14px;
-          height: 14px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        
-        .jaf-calendar-upcoming {
-          margin-top: 16px;
-          padding-top: 16px;
-          border-top: 1px solid #e5e5e5;
-        }
-        
-        .jaf-calendar-event {
-          padding: 8px 12px;
-          background: #f0fdf4;
-          border-radius: 6px;
-          margin-top: 8px;
-          font-size: 12px;
-        }
-        
-        .jaf-hidden {
-          display: none !important;
-        }
-        
-        .jaf-tracker-notification {
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          padding: 12px 24px;
-          color: white;
-          border-radius: 8px;
-          font-size: 13px;
-          font-weight: 500;
-          z-index: 999999;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-          transition: opacity 0.3s;
-        }
-      `;
-      document.head.appendChild(style);
+    // Escape HTML
+    escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
     },
 
-    // Quick add button for the main panel
-    createQuickAddButton() {
-      const btn = document.createElement("button");
-      btn.className = "jaf-panel-btn jaf-tracker-quick-btn";
-      btn.style.cssText =
-        "background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); margin-top: 8px;";
-      btn.innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-        </svg>
-        Job Tracker
-      `;
+    // Called when user submits a job application (auto-detect)
+    async onApplicationSubmitted(companyName, jobTitle, jobUrl) {
+      // Check if already exists
+      const existing = this.positions.find(
+        p => p.company.toLowerCase() === companyName.toLowerCase() &&
+             p.title.toLowerCase() === jobTitle.toLowerCase()
+      );
 
-      btn.addEventListener("click", () => {
-        if (this.panel) {
-          this.closePanel();
-        } else {
-          this.createTrackerPanel();
+      if (existing) {
+        // Update to applied status
+        if (existing.status !== "applied") {
+          await this.updatePosition(existing.id, { status: "applied" });
         }
-      });
+        return existing;
+      }
 
-      return btn;
+      // Create new position
+      const position = {
+        id: Date.now().toString(),
+        company: companyName,
+        title: jobTitle,
+        url: jobUrl || window.location.href,
+        status: "applied",
+        priority: "medium",
+        notes: "Auto-added by Job Autofill Extension",
+        dateAdded: new Date().toISOString(),
+        dateApplied: new Date().toISOString(),
+        dateUpdated: new Date().toISOString(),
+        source: "auto-submit",
+      };
+
+      this.positions.unshift(position);
+      await this.savePositions();
+
+      this.showNotification(`📨 Tracked: ${position.title} at ${position.company}`, "success");
+      return position;
     },
   };
+
+  // Initialize on load
+  JobTracker.init();
 })();

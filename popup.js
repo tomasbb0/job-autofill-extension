@@ -1567,7 +1567,7 @@ async function initAuthUI() {
         "https://www.googleapis.com/oauth2/v2/userinfo",
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       if (!response.ok) throw new Error("Failed to get user info");
@@ -1591,7 +1591,6 @@ async function initAuthUI() {
 
       // Sync data to cloud
       await syncToCloud(userSession);
-
     } catch (err) {
       console.error("Google sign-in error:", err);
       alert("Sign-in failed: " + err.message);
@@ -1610,7 +1609,9 @@ async function initAuthUI() {
 
   // Apple Sign In (more complex, requires proper setup)
   appleSignInBtn?.addEventListener("click", () => {
-    alert("Apple Sign-In requires additional setup. Please use Google Sign-In for now.");
+    alert(
+      "Apple Sign-In requires additional setup. Please use Google Sign-In for now.",
+    );
   });
 
   // Sign Out
@@ -1620,9 +1621,10 @@ async function initAuthUI() {
       chrome.identity.getAuthToken({ interactive: false }, (token) => {
         if (token) {
           // Revoke the token
-          fetch(`https://accounts.google.com/o/oauth2/revoke?token=${token}`)
-            .catch(() => {});
-          
+          fetch(
+            `https://accounts.google.com/o/oauth2/revoke?token=${token}`,
+          ).catch(() => {});
+
           // Remove from cache
           chrome.identity.removeCachedAuthToken({ token }, () => {});
         }
@@ -1633,7 +1635,6 @@ async function initAuthUI() {
 
       // Show not signed in state
       showNotSignedInState();
-
     } catch (err) {
       console.error("Sign out error:", err);
     }
@@ -1653,7 +1654,7 @@ function showSignedInState(userSession) {
 
   userName.textContent = userSession.displayName || "User";
   userEmail.textContent = userSession.email || "";
-  
+
   if (userSession.photoURL) {
     userAvatar.src = userSession.photoURL;
   } else {
@@ -1674,7 +1675,7 @@ function showNotSignedInState() {
 // Sync data to cloud (using Firebase or a simple backend)
 async function syncToCloud(userSession) {
   const syncStatus = document.getElementById("syncStatus");
-  
+
   try {
     syncStatus.innerHTML = `
       <svg class="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
@@ -1686,12 +1687,12 @@ async function syncToCloud(userSession) {
 
     // Get all local data
     const localData = await chrome.storage.sync.get(null);
-    
+
     // For now, we'll store the cloud sync timestamp
     // Full Firebase integration would go here
     await chrome.storage.sync.set({
       lastSyncAt: Date.now(),
-      syncedWith: userSession.email
+      syncedWith: userSession.email,
     });
 
     syncStatus.innerHTML = `
@@ -1701,7 +1702,6 @@ async function syncToCloud(userSession) {
       Synced
     `;
     syncStatus.className = "sync-status";
-
   } catch (err) {
     console.error("Sync error:", err);
     syncStatus.innerHTML = `⚠️ Sync failed`;
@@ -1711,4 +1711,3 @@ async function syncToCloud(userSession) {
 
 // Initialize auth on load
 initAuthUI();
-

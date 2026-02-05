@@ -211,23 +211,109 @@
 
       try {
         const userId = this.user.uid;
-        const snapshot = await this.db
+        
+        // Sync profile data
+        const profileSnapshot = await this.db
           .ref(`users/${userId}/profile`)
           .once("value");
-        const cloudData = snapshot.val();
+        const cloudProfile = profileSnapshot.val();
 
-        if (cloudData) {
+        if (cloudProfile) {
           // Merge cloud data with local data
           const localData = await chrome.storage.sync.get(null);
-          const mergedData = { ...localData, ...cloudData };
+          const mergedData = { ...localData, ...cloudProfile };
           await chrome.storage.sync.set(mergedData);
-          console.log("[Auth] Synced user data from cloud");
+          console.log("[Auth] Synced user profile from cloud");
         } else {
           // First time user - upload local data to cloud
           await this.uploadUserData();
         }
+
+        // Sync job tracker positions
+        const positionsSnapshot = await this.db
+          .ref(`users/${userId}/positions`)
+          .once("value");
+        const cloudPositions = positionsSnapshot.val();
+
+        if (cloudPositions) {
+          // Convert object to array if needed
+          const positionsArray = Array.isArray(cloudPositions) 
+            ? cloudPositions 
+            : Object.values(cloudPositions);
+          
+          // Merge with local positions
+          const localData = await chrome.storage.sync.get(["jobTrackerPositions"]);
+          const localPositions = localData.jobTrackerPositions || [];
+          
+          // Merge: combine both, dedupe by id
+          const allPositions = [...cloudPositions];
+          localPositions.forEach(local => {
+            if (!allPositions.find(p => p.id === local.id)) {
+              allPositions.push(local);
+            }
+          });
+          
+          // Sort by dateAdded descending
+          allPositions.sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
+          
+          await chrome.storage.sync.set({ jobTrackerPositions: allPositions });
+          
+          // Update JobTracker if available
+          if (window.JobTracker) {
+            window.JobTracker.positions = allPositions;
+          }
+          
+          console.log("[Auth] Synced", allPositions.length, "job positions from cloud");
+        } else {
+          // No cloud positions - upload local ones
+          await this.uploadJobTrackerData();
+        }
+        
+        // Setup real-time listener for positions
+        this.setupPositionsListener(userId);
+        
       } catch (err) {
         console.error("[Auth] Sync error:", err);
+      }
+    },
+
+    // Setup real-time listener for job tracker positions
+    setupPositionsListener(userId) {
+      if (this.positionsListener) return; // Already listening
+      
+      this.positionsListener = this.db
+        .ref(`users/${userId}/positions`)
+        .on("value", async (snapshot) => {
+          const cloudPositions = snapshot.val();
+          if (!cloudPositions) return;
+          
+          const positionsArray = Array.isArray(cloudPositions)
+            ? cloudPositions
+            : Object.values(cloudPositions);
+          
+          await chrome.storage.sync.set({ jobTrackerPositions: positionsArray });
+          
+          if (window.JobTracker) {
+            window.JobTracker.positions = positionsArray;
+          }
+        });
+    },
+
+    // Upload job tracker data to cloud
+    async uploadJobTrackerData() {
+      if (!this.user || !this.db) return;
+      
+      try {
+        const userId = this.user.uid;
+        const data = await chrome.storage.sync.get(["jobTrackerPositions"]);
+        const positions = data.jobTrackerPositions || [];
+        
+        if (positions.length > 0) {
+          await this.db.ref(`users/${userId}/positions`).set(positions);
+          console.log("[Auth] Uploaded", positions.length, "positions to cloud");
+        }
+      } catch (err) {
+        console.error("[Auth] Upload positions error:", err);
       }
     },
 

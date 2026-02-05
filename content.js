@@ -4549,6 +4549,202 @@ Respond ONLY with a JSON array like this:
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
+
+    // Setup job submission detection
+    setupSubmitDetection();
+  }
+
+  // Detect when user submits a job application
+  function setupSubmitDetection() {
+    // Common submit button selectors for job application sites
+    const submitSelectors = [
+      'button[type="submit"]',
+      'input[type="submit"]',
+      'button[data-automation-id="bottom-navigation-next-button"]', // Workday
+      'button[data-automation-id="submit"]',
+      'button.submit-btn',
+      'button.submit',
+      'button:contains("Submit Application")',
+      'button:contains("Submit")',
+      'button:contains("Apply")',
+      '#submit_app',
+      '.jobs-apply-button',
+      '[data-control-name="apply"]',
+    ];
+
+    // Track if we've already registered this application
+    let applicationRegistered = false;
+
+    // Listen for clicks on submit buttons
+    document.addEventListener("click", async (e) => {
+      if (applicationRegistered) return;
+
+      const target = e.target;
+      const button = target.closest("button, input[type='submit'], a");
+      
+      if (!button) return;
+
+      // Check if this looks like a submit button
+      const buttonText = (button.textContent || button.value || "").toLowerCase();
+      const isSubmitButton = 
+        button.type === "submit" ||
+        submitSelectors.some(sel => {
+          try { return button.matches(sel); } catch { return false; }
+        }) ||
+        /submit|apply\s*(now)?|send\s*application|confirm/i.test(buttonText);
+
+      if (!isSubmitButton) return;
+
+      // Only track on job application pages
+      if (!detectJobPage()) return;
+
+      // Get job info from the page
+      const jobInfo = extractJobInfoFromPage();
+      
+      if (!jobInfo.company && !jobInfo.title) return;
+
+      // Wait a moment to see if submission succeeds
+      setTimeout(async () => {
+        // Check if we navigated or got a success message
+        const hasSuccessIndicators = checkForSubmissionSuccess();
+        
+        if (hasSuccessIndicators) {
+          applicationRegistered = true;
+          
+          // Register with JobTracker if available
+          if (window.JobTracker) {
+            await window.JobTracker.onApplicationSubmitted(
+              jobInfo.company,
+              jobInfo.title,
+              window.location.href
+            );
+          }
+        }
+      }, 2000);
+    }, true);
+
+    // Also listen for form submissions
+    document.addEventListener("submit", async (e) => {
+      if (applicationRegistered) return;
+      if (!detectJobPage()) return;
+
+      const jobInfo = extractJobInfoFromPage();
+      if (!jobInfo.company && !jobInfo.title) return;
+
+      setTimeout(async () => {
+        const hasSuccessIndicators = checkForSubmissionSuccess();
+        
+        if (hasSuccessIndicators) {
+          applicationRegistered = true;
+          
+          if (window.JobTracker) {
+            await window.JobTracker.onApplicationSubmitted(
+              jobInfo.company,
+              jobInfo.title,
+              window.location.href
+            );
+          }
+        }
+      }, 2000);
+    }, true);
+  }
+
+  // Extract job info from current page
+  function extractJobInfoFromPage() {
+    const info = { company: "", title: "" };
+    const url = window.location.href.toLowerCase();
+
+    // Workday
+    if (url.includes("workday")) {
+      const companyMatch = url.match(/([^/]+)\.wd\d+\.myworkdayjobs/);
+      if (companyMatch) info.company = formatCompanyName(companyMatch[1]);
+      
+      const titleEl = document.querySelector('[data-automation-id="jobPostingHeader"] h2, .css-1j389vi, h1');
+      if (titleEl) info.title = titleEl.textContent.trim();
+    }
+
+    // Greenhouse
+    if (url.includes("greenhouse.io") || url.includes("boards.greenhouse")) {
+      const companyMatch = url.match(/boards\.greenhouse\.io\/([^/]+)/);
+      if (companyMatch) info.company = formatCompanyName(companyMatch[1]);
+      
+      const titleEl = document.querySelector('h1.app-title, .job-title, h1');
+      if (titleEl) info.title = titleEl.textContent.trim();
+    }
+
+    // Lever
+    if (url.includes("lever.co")) {
+      const companyMatch = url.match(/jobs\.lever\.co\/([^/]+)/);
+      if (companyMatch) info.company = formatCompanyName(companyMatch[1]);
+      
+      const titleEl = document.querySelector('.posting-headline h2, h1');
+      if (titleEl) info.title = titleEl.textContent.trim();
+    }
+
+    // LinkedIn
+    if (url.includes("linkedin.com")) {
+      const companyEl = document.querySelector('.jobs-unified-top-card__company-name, .topcard__org-name-link, .company-name');
+      if (companyEl) info.company = companyEl.textContent.trim();
+      
+      const titleEl = document.querySelector('.jobs-unified-top-card__job-title, .topcard__title, h1');
+      if (titleEl) info.title = titleEl.textContent.trim();
+    }
+
+    // Generic fallback
+    if (!info.title) {
+      const h1 = document.querySelector('h1');
+      if (h1) info.title = h1.textContent.trim().substring(0, 100);
+    }
+
+    if (!info.company) {
+      // Try meta tags
+      const orgMeta = document.querySelector('meta[property="og:site_name"], meta[name="author"]');
+      if (orgMeta) info.company = orgMeta.content;
+
+      // Try JSON-LD
+      document.querySelectorAll('script[type="application/ld+json"]').forEach(script => {
+        try {
+          const data = JSON.parse(script.textContent);
+          if (data["@type"] === "JobPosting" && data.hiringOrganization?.name) {
+            info.company = data.hiringOrganization.name;
+          }
+        } catch {}
+      });
+    }
+
+    return info;
+  }
+
+  // Format company name
+  function formatCompanyName(name) {
+    return name
+      .replace(/-/g, " ")
+      .replace(/_/g, " ")
+      .split(" ")
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+  }
+
+  // Check for submission success indicators
+  function checkForSubmissionSuccess() {
+    const successPatterns = [
+      /thank\s*you/i,
+      /application\s*(submitted|received|complete)/i,
+      /successfully\s*(submitted|applied)/i,
+      /we('ve)?\s*received\s*your/i,
+      /confirmation/i,
+    ];
+
+    const pageText = document.body.innerText;
+    const hasTextIndicator = successPatterns.some(p => p.test(pageText));
+
+    // Check for success elements
+    const successElements = document.querySelectorAll(
+      '.success, .confirmation, [class*="success"], [class*="confirm"], [class*="thank"]'
+    );
+    const hasSuccessElement = successElements.length > 0;
+
+    return hasTextIndicator || hasSuccessElement;
   }
 
   // Listen for trigger from popup or parent window
