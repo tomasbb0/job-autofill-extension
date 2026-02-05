@@ -14,9 +14,24 @@
 
     // Status pipeline
     STATUSES: [
-      { value: "not-started", label: "Not Started", color: "#f5f5f5", icon: "📋" },
-      { value: "researching", label: "Researching", color: "#fef3c7", icon: "🔍" },
-      { value: "waiting-referral", label: "Waiting Referral", color: "#fef9c3", icon: "⏳" },
+      {
+        value: "not-started",
+        label: "Not Started",
+        color: "#f5f5f5",
+        icon: "📋",
+      },
+      {
+        value: "researching",
+        label: "Researching",
+        color: "#fef3c7",
+        icon: "🔍",
+      },
+      {
+        value: "waiting-referral",
+        label: "Waiting Referral",
+        color: "#fef9c3",
+        icon: "⏳",
+      },
       { value: "applied", label: "Applied", color: "#dbeafe", icon: "📨" },
       { value: "interview", label: "Interview", color: "#d1fae5", icon: "🗣️" },
       { value: "offer", label: "Offer", color: "#ecfdf5", icon: "🎉" },
@@ -38,7 +53,11 @@
         // Load positions from storage
         await this.loadPositions();
         this.isInitialized = true;
-        console.log("[JobTracker] Initialized with", this.positions.length, "positions");
+        console.log(
+          "[JobTracker] Initialized with",
+          this.positions.length,
+          "positions",
+        );
       } catch (err) {
         console.error("[JobTracker] Init failed:", err);
       }
@@ -60,7 +79,7 @@
       try {
         await chrome.storage.sync.set({ jobTrackerPositions: this.positions });
         console.log("[JobTracker] Saved", this.positions.length, "positions");
-        
+
         // Sync to cloud if user is logged in
         if (window.AuthManager && window.AuthManager.isSignedIn()) {
           window.AuthManager.uploadJobTrackerData();
@@ -73,20 +92,27 @@
     // Auto-detect and add job from current page
     async addFromCurrentPage() {
       const jobInfo = this.detectJobInfo();
-      
+
       if (!jobInfo.company && !jobInfo.title) {
-        this.showNotification("Could not detect job info from this page", "error");
+        this.showNotification(
+          "Could not detect job info from this page",
+          "error",
+        );
         return null;
       }
 
       // Check if already exists
       const existing = this.positions.find(
-        p => p.company.toLowerCase() === jobInfo.company.toLowerCase() &&
-             p.title.toLowerCase() === jobInfo.title.toLowerCase()
+        (p) =>
+          p.company.toLowerCase() === jobInfo.company.toLowerCase() &&
+          p.title.toLowerCase() === jobInfo.title.toLowerCase(),
       );
 
       if (existing) {
-        this.showNotification(`Already tracking: ${jobInfo.title} at ${jobInfo.company}`, "info");
+        this.showNotification(
+          `Already tracking: ${jobInfo.title} at ${jobInfo.company}`,
+          "info",
+        );
         return existing;
       }
 
@@ -108,7 +134,10 @@
       this.positions.unshift(position);
       await this.savePositions();
 
-      this.showNotification(`Added: ${position.title} at ${position.company}`, "success");
+      this.showNotification(
+        `Added: ${position.title} at ${position.company}`,
+        "success",
+      );
       return position;
     },
 
@@ -126,52 +155,66 @@
       // Workday
       if (url.includes("workday")) {
         const companyMatch = url.match(/([^/]+)\.wd\d+\.myworkdayjobs/);
-        if (companyMatch) info.company = this.formatCompanyName(companyMatch[1]);
-        
-        const titleEl = document.querySelector('[data-automation-id="jobPostingHeader"] h2, .css-1j389vi');
+        if (companyMatch)
+          info.company = this.formatCompanyName(companyMatch[1]);
+
+        const titleEl = document.querySelector(
+          '[data-automation-id="jobPostingHeader"] h2, .css-1j389vi',
+        );
         if (titleEl) info.title = titleEl.textContent.trim();
       }
 
       // Greenhouse
       if (url.includes("greenhouse.io") || url.includes("boards.greenhouse")) {
         const companyMatch = url.match(/boards\.greenhouse\.io\/([^/]+)/);
-        if (companyMatch) info.company = this.formatCompanyName(companyMatch[1]);
-        
-        const titleEl = document.querySelector('h1.app-title, .job-title');
+        if (companyMatch)
+          info.company = this.formatCompanyName(companyMatch[1]);
+
+        const titleEl = document.querySelector("h1.app-title, .job-title");
         if (titleEl) info.title = titleEl.textContent.trim();
       }
 
       // Lever
       if (url.includes("lever.co")) {
         const companyMatch = url.match(/jobs\.lever\.co\/([^/]+)/);
-        if (companyMatch) info.company = this.formatCompanyName(companyMatch[1]);
-        
-        const titleEl = document.querySelector('.posting-headline h2');
+        if (companyMatch)
+          info.company = this.formatCompanyName(companyMatch[1]);
+
+        const titleEl = document.querySelector(".posting-headline h2");
         if (titleEl) info.title = titleEl.textContent.trim();
       }
 
       // LinkedIn
       if (url.includes("linkedin.com/jobs")) {
-        const companyEl = document.querySelector('.jobs-unified-top-card__company-name, .topcard__org-name-link');
+        const companyEl = document.querySelector(
+          ".jobs-unified-top-card__company-name, .topcard__org-name-link",
+        );
         if (companyEl) info.company = companyEl.textContent.trim();
-        
-        const titleEl = document.querySelector('.jobs-unified-top-card__job-title, .topcard__title');
+
+        const titleEl = document.querySelector(
+          ".jobs-unified-top-card__job-title, .topcard__title",
+        );
         if (titleEl) info.title = titleEl.textContent.trim();
       }
 
       // Generic fallback - try to extract from page
       if (!info.company || !info.title) {
         // Look for common patterns
-        const h1 = document.querySelector('h1');
-        if (h1 && !info.title) info.title = h1.textContent.trim().substring(0, 100);
+        const h1 = document.querySelector("h1");
+        if (h1 && !info.title)
+          info.title = h1.textContent.trim().substring(0, 100);
 
         // Try to get company from meta tags or structured data
-        const orgMeta = document.querySelector('meta[property="og:site_name"], meta[name="author"]');
+        const orgMeta = document.querySelector(
+          'meta[property="og:site_name"], meta[name="author"]',
+        );
         if (orgMeta && !info.company) info.company = orgMeta.content;
 
         // Try JSON-LD
-        const ldScripts = document.querySelectorAll('script[type="application/ld+json"]');
-        ldScripts.forEach(script => {
+        const ldScripts = document.querySelectorAll(
+          'script[type="application/ld+json"]',
+        );
+        ldScripts.forEach((script) => {
           try {
             const data = JSON.parse(script.textContent);
             if (data["@type"] === "JobPosting") {
@@ -193,12 +236,20 @@
         .replace(/-/g, " ")
         .replace(/_/g, " ")
         .split(" ")
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .map(
+          (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+        )
         .join(" ");
     },
 
     // Add position manually
-    async addPosition(company, title, url = "", status = "not-started", priority = "medium") {
+    async addPosition(
+      company,
+      title,
+      url = "",
+      status = "not-started",
+      priority = "medium",
+    ) {
       const position = {
         id: Date.now().toString(),
         company,
@@ -220,7 +271,7 @@
 
     // Update position
     async updatePosition(id, updates) {
-      const index = this.positions.findIndex(p => p.id === id);
+      const index = this.positions.findIndex((p) => p.id === id);
       if (index === -1) return null;
 
       this.positions[index] = {
@@ -240,13 +291,13 @@
 
     // Delete position
     async deletePosition(id) {
-      this.positions = this.positions.filter(p => p.id !== id);
+      this.positions = this.positions.filter((p) => p.id !== id);
       await this.savePositions();
     },
 
     // Get positions by status
     getPositionsByStatus(status) {
-      return this.positions.filter(p => p.status === status);
+      return this.positions.filter((p) => p.status === status);
     },
 
     // Get statistics
@@ -262,11 +313,11 @@
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-      this.STATUSES.forEach(s => stats.byStatus[s.value] = 0);
+      this.STATUSES.forEach((s) => (stats.byStatus[s.value] = 0));
 
-      this.positions.forEach(p => {
+      this.positions.forEach((p) => {
         stats.byStatus[p.status] = (stats.byStatus[p.status] || 0) + 1;
-        
+
         const addedDate = new Date(p.dateAdded);
         if (addedDate >= weekAgo) stats.thisWeek++;
         if (addedDate >= monthAgo) stats.thisMonth++;
@@ -287,7 +338,7 @@
       const panel = document.createElement("div");
       panel.id = "jaf-job-tracker-panel";
       panel.innerHTML = this.getPanelHTML();
-      
+
       // Add styles
       const style = document.createElement("style");
       style.textContent = this.getPanelStyles();
@@ -328,19 +379,23 @@
         </div>
 
         <div class="jaft-stats">
-          ${this.STATUSES.slice(0, 5).map(s => `
+          ${this.STATUSES.slice(0, 5)
+            .map(
+              (s) => `
             <div class="jaft-stat" style="background: ${s.color}">
               <span class="jaft-stat-icon">${s.icon}</span>
               <span class="jaft-stat-count">${stats.byStatus[s.value] || 0}</span>
               <span class="jaft-stat-label">${s.label}</span>
             </div>
-          `).join("")}
+          `,
+            )
+            .join("")}
         </div>
 
         <div class="jaft-filters">
           <select class="jaft-filter-status">
             <option value="">All Statuses</option>
-            ${this.STATUSES.map(s => `<option value="${s.value}">${s.icon} ${s.label}</option>`).join("")}
+            ${this.STATUSES.map((s) => `<option value="${s.value}">${s.icon} ${s.label}</option>`).join("")}
           </select>
           <input type="text" class="jaft-search" placeholder="Search jobs...">
         </div>
@@ -587,25 +642,39 @@
       });
 
       // Add current job
-      this.panel.querySelector(".jaft-add-current")?.addEventListener("click", async () => {
-        await this.addFromCurrentPage();
-        this.renderPositions();
-      });
+      this.panel
+        .querySelector(".jaft-add-current")
+        ?.addEventListener("click", async () => {
+          await this.addFromCurrentPage();
+          this.renderPositions();
+        });
 
       // Filter by status
-      this.panel.querySelector(".jaft-filter-status")?.addEventListener("change", (e) => {
-        this.renderPositions(e.target.value, this.panel.querySelector(".jaft-search").value);
-      });
+      this.panel
+        .querySelector(".jaft-filter-status")
+        ?.addEventListener("change", (e) => {
+          this.renderPositions(
+            e.target.value,
+            this.panel.querySelector(".jaft-search").value,
+          );
+        });
 
       // Search
-      this.panel.querySelector(".jaft-search")?.addEventListener("input", (e) => {
-        this.renderPositions(this.panel.querySelector(".jaft-filter-status").value, e.target.value);
-      });
+      this.panel
+        .querySelector(".jaft-search")
+        ?.addEventListener("input", (e) => {
+          this.renderPositions(
+            this.panel.querySelector(".jaft-filter-status").value,
+            e.target.value,
+          );
+        });
 
       // Export
-      this.panel.querySelector(".jaft-export")?.addEventListener("click", () => {
-        this.exportToCSV();
-      });
+      this.panel
+        .querySelector(".jaft-export")
+        ?.addEventListener("click", () => {
+          this.exportToCSV();
+        });
     },
 
     // Render positions list
@@ -617,15 +686,16 @@
 
       // Filter by status
       if (statusFilter) {
-        positions = positions.filter(p => p.status === statusFilter);
+        positions = positions.filter((p) => p.status === statusFilter);
       }
 
       // Filter by search
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        positions = positions.filter(p => 
-          p.company.toLowerCase().includes(query) ||
-          p.title.toLowerCase().includes(query)
+        positions = positions.filter(
+          (p) =>
+            p.company.toLowerCase().includes(query) ||
+            p.title.toLowerCase().includes(query),
         );
       }
 
@@ -642,11 +712,13 @@
         return;
       }
 
-      listEl.innerHTML = positions.map(p => {
-        const status = this.STATUSES.find(s => s.value === p.status) || this.STATUSES[0];
-        const dateStr = new Date(p.dateAdded).toLocaleDateString();
+      listEl.innerHTML = positions
+        .map((p) => {
+          const status =
+            this.STATUSES.find((s) => s.value === p.status) || this.STATUSES[0];
+          const dateStr = new Date(p.dateAdded).toLocaleDateString();
 
-        return `
+          return `
           <div class="jaft-job" data-id="${p.id}">
             <span class="jaft-job-icon">${status.icon}</span>
             <div class="jaft-job-info">
@@ -663,17 +735,18 @@
             </div>
           </div>
         `;
-      }).join("");
+        })
+        .join("");
 
       // Add click handlers
-      listEl.querySelectorAll(".jaft-job-open").forEach(btn => {
+      listEl.querySelectorAll(".jaft-job-open").forEach((btn) => {
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
           window.open(btn.dataset.url, "_blank");
         });
       });
 
-      listEl.querySelectorAll(".jaft-job-delete").forEach(btn => {
+      listEl.querySelectorAll(".jaft-job-delete").forEach((btn) => {
         btn.addEventListener("click", async (e) => {
           e.stopPropagation();
           if (confirm("Delete this job?")) {
@@ -684,7 +757,7 @@
       });
 
       // Click on job to change status
-      listEl.querySelectorAll(".jaft-job").forEach(el => {
+      listEl.querySelectorAll(".jaft-job").forEach((el) => {
         el.addEventListener("click", () => {
           this.showStatusMenu(el.dataset.id);
         });
@@ -693,7 +766,7 @@
 
     // Show status change menu
     showStatusMenu(positionId) {
-      const position = this.positions.find(p => p.id === positionId);
+      const position = this.positions.find((p) => p.id === positionId);
       if (!position) return;
 
       const menu = document.createElement("div");
@@ -712,7 +785,8 @@
 
       menu.innerHTML = `
         <div style="font-weight: 600; margin-bottom: 12px;">Update Status</div>
-        ${this.STATUSES.map(s => `
+        ${this.STATUSES.map(
+          (s) => `
           <button data-status="${s.value}" style="
             display: flex;
             align-items: center;
@@ -720,7 +794,7 @@
             width: 100%;
             padding: 10px 12px;
             border: none;
-            background: ${s.value === position.status ? '#f0f0f0' : 'transparent'};
+            background: ${s.value === position.status ? "#f0f0f0" : "transparent"};
             border-radius: 8px;
             cursor: pointer;
             text-align: left;
@@ -729,7 +803,8 @@
           ">
             ${s.icon} ${s.label}
           </button>
-        `).join("")}
+        `,
+        ).join("")}
         <button class="jaft-menu-close" style="
           width: 100%;
           padding: 10px;
@@ -745,7 +820,7 @@
       document.body.appendChild(menu);
 
       // Status buttons
-      menu.querySelectorAll("[data-status]").forEach(btn => {
+      menu.querySelectorAll("[data-status]").forEach((btn) => {
         btn.addEventListener("click", async () => {
           await this.updatePosition(positionId, { status: btn.dataset.status });
           menu.remove();
@@ -755,7 +830,9 @@
       });
 
       // Close button
-      menu.querySelector(".jaft-menu-close")?.addEventListener("click", () => menu.remove());
+      menu
+        .querySelector(".jaft-menu-close")
+        ?.addEventListener("click", () => menu.remove());
 
       // Click outside to close
       setTimeout(() => {
@@ -771,18 +848,28 @@
     // Update panel stats
     updatePanelStats() {
       if (!this.panel) return;
-      
+
       const stats = this.getStats();
-      
+
       // Update header subtitle
       const subtitle = this.panel.querySelector(".jaft-subtitle");
-      if (subtitle) subtitle.textContent = `${stats.total} applications tracked`;
+      if (subtitle)
+        subtitle.textContent = `${stats.total} applications tracked`;
     },
 
     // Export to CSV
     exportToCSV() {
-      const headers = ["Company", "Title", "Status", "Priority", "URL", "Date Added", "Date Applied", "Notes"];
-      const rows = this.positions.map(p => [
+      const headers = [
+        "Company",
+        "Title",
+        "Status",
+        "Priority",
+        "URL",
+        "Date Added",
+        "Date Applied",
+        "Notes",
+      ];
+      const rows = this.positions.map((p) => [
         p.company,
         p.title,
         p.status,
@@ -790,12 +877,14 @@
         p.url,
         p.dateAdded,
         p.dateApplied || "",
-        p.notes
+        p.notes,
       ]);
 
       const csv = [
         headers.join(","),
-        ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+        ...rows.map((row) =>
+          row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","),
+        ),
       ].join("\n");
 
       const blob = new Blob([csv], { type: "text/csv" });
@@ -855,8 +944,9 @@
     async onApplicationSubmitted(companyName, jobTitle, jobUrl) {
       // Check if already exists
       const existing = this.positions.find(
-        p => p.company.toLowerCase() === companyName.toLowerCase() &&
-             p.title.toLowerCase() === jobTitle.toLowerCase()
+        (p) =>
+          p.company.toLowerCase() === companyName.toLowerCase() &&
+          p.title.toLowerCase() === jobTitle.toLowerCase(),
       );
 
       if (existing) {
@@ -885,7 +975,10 @@
       this.positions.unshift(position);
       await this.savePositions();
 
-      this.showNotification(`📨 Tracked: ${position.title} at ${position.company}`, "success");
+      this.showNotification(
+        `📨 Tracked: ${position.title} at ${position.company}`,
+        "success",
+      );
       return position;
     },
   };

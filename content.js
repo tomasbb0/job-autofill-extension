@@ -1854,114 +1854,7 @@ First person. Don't repeat other answers.`,
         <button class="jaf-panel-close" title="Close">×</button>
       </div>
       
-      <!-- Panel Tabs -->
-      <div class="jaf-panel-tabs">
-        <button class="jaf-panel-tab jaf-tab-active" data-tab="fill">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-          </svg>
-          Fill
-        </button>
-        <button class="jaf-panel-tab" data-tab="database">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/>
-          </svg>
-          Database
-        </button>
-      </div>
-      
-      <!-- Fill Tab Content -->
-      <div class="jaf-panel-body jaf-tab-content" data-tab="fill">
-        <button class="jaf-panel-btn jaf-fill-all-btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-          </svg>
-          Fill All Fields
-        </button>
-        <div class="jaf-panel-stats">
-          <span class="jaf-stat-count">0 fields</span><span class="jaf-ai-count"></span>
-        </div>
-        
-        <!-- Missing Parameters Section - Collapsible -->
-        <details class="jaf-missing-section" style="display: none;">
-          <summary class="jaf-missing-label">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-            </svg>
-            <span class="jaf-missing-count">0</span> fields need data
-          </summary>
-          <div class="jaf-missing-list"></div>
-        </details>
-        
-        <label class="jaf-ai-toggle">
-          <input type="checkbox" id="jaf-include-ai" />
-          <span>Include AI fields</span>
-        </label>
-        
-        <!-- Collapsible Tools Section -->
-        <details class="jaf-tools-section" open>
-          <summary class="jaf-tools-label">🛠️ Tools</summary>
-          <div class="jaf-tools-content">
-            <button class="jaf-panel-btn jaf-cover-letter-btn jaf-btn-sm" style="background: linear-gradient(135deg, #1a1a1a 0%, #333333 100%);">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-              </svg>
-              Cover Letter (PDF)
-            </button>
-            <button class="jaf-panel-btn jaf-job-tracker-btn jaf-btn-sm" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-              </svg>
-              Job Tracker
-            </button>
-            <button class="jaf-panel-btn jaf-hide-all-btn jaf-btn-sm" style="background: #f5f5f5; color: #666;">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
-              </svg>
-              Hide buttons
-            </button>
-          </div>
-        </details>
-      </div>
-      
-      <!-- Database Tab Content -->
-      <div class="jaf-panel-body jaf-tab-content jaf-tab-hidden" data-tab="database">
-        <div class="jaf-db-header">
-          <span class="jaf-db-count">0 items stored</span>
-          <button class="jaf-db-refresh" title="Refresh">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-            </svg>
-          </button>
-        </div>
-        <div class="jaf-db-search">
-          <input type="text" class="jaf-db-search-input" placeholder="Search stored data...">
-        </div>
-        <div class="jaf-db-list"></div>
-        <div class="jaf-db-actions">
-          <button class="jaf-panel-btn jaf-db-upload-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-size: 11px;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
-            </svg>
-            Upload Document
-          </button>
-          <input type="file" class="jaf-db-file-input" accept=".pdf,.doc,.docx,.txt" style="display: none;">
-          <button class="jaf-panel-btn jaf-db-export-btn jaf-export-btn" style="font-size: 11px; margin-top: 6px;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            </svg>
-            Export Profile Backup
-          </button>
-          <button class="jaf-panel-btn jaf-db-clear-btn" style="background: #f5f5f5; color: #dc2626; font-size: 11px; margin-top: 6px;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-            </svg>
-            Clear All Data
-          </button>
-        </div>
-      </div>
-      
-      <!-- AI Assistant Chatbox - starts minimized, expands on job application pages -->
+      <!-- AI Assistant Chatbox - AT THE TOP, expanded by default on job pages -->
       <div class="jaf-ai-chatbox jaf-chatbox-minimized" style="display: block;">
         <div class="jaf-chatbox-header">
           <span>🤖 AI Assistant</span>
@@ -1986,6 +1879,67 @@ First person. Don't repeat other answers.`,
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
               </svg>
               Send
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Panel Content - Tools and Fill -->
+      <div class="jaf-panel-body">
+        <!-- Missing Parameters Section - Collapsible -->
+        <details class="jaf-missing-section" style="display: none;">
+          <summary class="jaf-missing-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <span class="jaf-missing-count">0</span> fields need data
+          </summary>
+          <div class="jaf-missing-list"></div>
+        </details>
+        
+        <!-- Tools Section - All buttons grouped together -->
+        <div class="jaf-tools-compact">
+          <button class="jaf-panel-btn jaf-fill-all-btn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Fill All Fields
+          </button>
+          <div class="jaf-panel-stats">
+            <span class="jaf-stat-count">0 fields</span><span class="jaf-ai-count"></span>
+          </div>
+          <label class="jaf-ai-toggle">
+            <input type="checkbox" id="jaf-include-ai" />
+            <span>Include AI fields</span>
+          </label>
+          
+          <div class="jaf-tools-row">
+            <button class="jaf-panel-btn jaf-fill-ai-btn jaf-btn-sm" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+              Fill AI Fields
+            </button>
+            <button class="jaf-panel-btn jaf-cover-letter-btn jaf-btn-sm" style="background: linear-gradient(135deg, #1a1a1a 0%, #333333 100%);">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              Cover Letter
+            </button>
+          </div>
+          
+          <div class="jaf-tools-row">
+            <button class="jaf-panel-btn jaf-job-tracker-btn jaf-btn-sm" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+              </svg>
+              Job Tracker
+            </button>
+            <button class="jaf-panel-btn jaf-hide-all-btn jaf-btn-sm" style="background: #f5f5f5; color: #666;">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+              </svg>
+              Hide
             </button>
           </div>
         </div>
@@ -2064,6 +2018,13 @@ First person. Don't repeat other answers.`,
         window.SmartChatbox.open();
       }
     }, 500);
+
+    // Fill AI Fields button - fills only AI-requiring fields
+    panel
+      .querySelector(".jaf-fill-ai-btn")
+      ?.addEventListener("click", async () => {
+        await autofillAll(true); // Force include AI
+      });
 
     // Cover Letter button
     panel
@@ -2158,83 +2119,6 @@ First person. Don't repeat other answers.`,
             await processAttachedDocument(file);
           }
         }
-      });
-
-    // Tab switching
-    panel.querySelectorAll(".jaf-panel-tab").forEach((tab) => {
-      tab.addEventListener("click", () => {
-        const tabName = tab.dataset.tab;
-
-        // Update active tab
-        panel
-          .querySelectorAll(".jaf-panel-tab")
-          .forEach((t) => t.classList.remove("jaf-tab-active"));
-        tab.classList.add("jaf-tab-active");
-
-        // Show correct content
-        panel.querySelectorAll(".jaf-tab-content").forEach((content) => {
-          if (content.dataset.tab === tabName) {
-            content.classList.remove("jaf-tab-hidden");
-          } else {
-            content.classList.add("jaf-tab-hidden");
-          }
-        });
-
-        // Load database when switching to it
-        if (tabName === "database") {
-          loadDatabaseView();
-        }
-      });
-    });
-
-    // Database tab handlers
-    panel.querySelector(".jaf-db-refresh")?.addEventListener("click", () => {
-      loadDatabaseView();
-    });
-
-    panel
-      .querySelector(".jaf-db-search-input")
-      ?.addEventListener("input", (e) => {
-        filterDatabaseView(e.target.value);
-      });
-
-    panel.querySelector(".jaf-db-upload-btn")?.addEventListener("click", () => {
-      panel.querySelector(".jaf-db-file-input").click();
-    });
-
-    panel
-      .querySelector(".jaf-db-file-input")
-      ?.addEventListener("change", async (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          await uploadDocumentToDatabase(file);
-          e.target.value = ""; // Reset input
-        }
-      });
-
-    panel
-      .querySelector(".jaf-db-clear-btn")
-      ?.addEventListener("click", async () => {
-        if (
-          confirm(
-            "Are you sure you want to clear ALL stored data? This cannot be undone.",
-          )
-        ) {
-          await chrome.storage.sync.set({
-            learnedResponses: {},
-            customParams: [],
-            extractedDocuments: [],
-          });
-          loadDatabaseView();
-          showNotification(0, [], "All stored data has been cleared");
-        }
-      });
-
-    // Export profile backup button
-    panel
-      .querySelector(".jaf-db-export-btn")
-      ?.addEventListener("click", async () => {
-        await exportProfileBackup();
       });
 
     updatePanelStats();
@@ -4562,13 +4446,13 @@ Respond ONLY with a JSON array like this:
       'input[type="submit"]',
       'button[data-automation-id="bottom-navigation-next-button"]', // Workday
       'button[data-automation-id="submit"]',
-      'button.submit-btn',
-      'button.submit',
+      "button.submit-btn",
+      "button.submit",
       'button:contains("Submit Application")',
       'button:contains("Submit")',
       'button:contains("Apply")',
-      '#submit_app',
-      '.jobs-apply-button',
+      "#submit_app",
+      ".jobs-apply-button",
       '[data-control-name="apply"]',
     ];
 
@@ -4576,77 +4460,93 @@ Respond ONLY with a JSON array like this:
     let applicationRegistered = false;
 
     // Listen for clicks on submit buttons
-    document.addEventListener("click", async (e) => {
-      if (applicationRegistered) return;
+    document.addEventListener(
+      "click",
+      async (e) => {
+        if (applicationRegistered) return;
 
-      const target = e.target;
-      const button = target.closest("button, input[type='submit'], a");
-      
-      if (!button) return;
+        const target = e.target;
+        const button = target.closest("button, input[type='submit'], a");
 
-      // Check if this looks like a submit button
-      const buttonText = (button.textContent || button.value || "").toLowerCase();
-      const isSubmitButton = 
-        button.type === "submit" ||
-        submitSelectors.some(sel => {
-          try { return button.matches(sel); } catch { return false; }
-        }) ||
-        /submit|apply\s*(now)?|send\s*application|confirm/i.test(buttonText);
+        if (!button) return;
 
-      if (!isSubmitButton) return;
+        // Check if this looks like a submit button
+        const buttonText = (
+          button.textContent ||
+          button.value ||
+          ""
+        ).toLowerCase();
+        const isSubmitButton =
+          button.type === "submit" ||
+          submitSelectors.some((sel) => {
+            try {
+              return button.matches(sel);
+            } catch {
+              return false;
+            }
+          }) ||
+          /submit|apply\s*(now)?|send\s*application|confirm/i.test(buttonText);
 
-      // Only track on job application pages
-      if (!detectJobPage()) return;
+        if (!isSubmitButton) return;
 
-      // Get job info from the page
-      const jobInfo = extractJobInfoFromPage();
-      
-      if (!jobInfo.company && !jobInfo.title) return;
+        // Only track on job application pages
+        if (!detectJobPage()) return;
 
-      // Wait a moment to see if submission succeeds
-      setTimeout(async () => {
-        // Check if we navigated or got a success message
-        const hasSuccessIndicators = checkForSubmissionSuccess();
-        
-        if (hasSuccessIndicators) {
-          applicationRegistered = true;
-          
-          // Register with JobTracker if available
-          if (window.JobTracker) {
-            await window.JobTracker.onApplicationSubmitted(
-              jobInfo.company,
-              jobInfo.title,
-              window.location.href
-            );
+        // Get job info from the page
+        const jobInfo = extractJobInfoFromPage();
+
+        if (!jobInfo.company && !jobInfo.title) return;
+
+        // Wait a moment to see if submission succeeds
+        setTimeout(async () => {
+          // Check if we navigated or got a success message
+          const hasSuccessIndicators = checkForSubmissionSuccess();
+
+          if (hasSuccessIndicators) {
+            applicationRegistered = true;
+
+            // Register with JobTracker if available
+            if (window.JobTracker) {
+              await window.JobTracker.onApplicationSubmitted(
+                jobInfo.company,
+                jobInfo.title,
+                window.location.href,
+              );
+            }
           }
-        }
-      }, 2000);
-    }, true);
+        }, 2000);
+      },
+      true,
+    );
 
     // Also listen for form submissions
-    document.addEventListener("submit", async (e) => {
-      if (applicationRegistered) return;
-      if (!detectJobPage()) return;
+    document.addEventListener(
+      "submit",
+      async (e) => {
+        if (applicationRegistered) return;
+        if (!detectJobPage()) return;
 
-      const jobInfo = extractJobInfoFromPage();
-      if (!jobInfo.company && !jobInfo.title) return;
+        const jobInfo = extractJobInfoFromPage();
+        if (!jobInfo.company && !jobInfo.title) return;
 
-      setTimeout(async () => {
-        const hasSuccessIndicators = checkForSubmissionSuccess();
-        
-        if (hasSuccessIndicators) {
-          applicationRegistered = true;
-          
-          if (window.JobTracker) {
-            await window.JobTracker.onApplicationSubmitted(
-              jobInfo.company,
-              jobInfo.title,
-              window.location.href
-            );
+        setTimeout(async () => {
+          const hasSuccessIndicators = checkForSubmissionSuccess();
+
+          if (hasSuccessIndicators) {
+            applicationRegistered = true;
+
+            if (window.JobTracker) {
+              await window.JobTracker.onApplicationSubmitted(
+                jobInfo.company,
+                jobInfo.title,
+                window.location.href,
+              );
+            }
           }
-        }
-      }, 2000);
-    }, true);
+        }, 2000);
+      },
+      true,
+    );
   }
 
   // Extract job info from current page
@@ -4658,8 +4558,10 @@ Respond ONLY with a JSON array like this:
     if (url.includes("workday")) {
       const companyMatch = url.match(/([^/]+)\.wd\d+\.myworkdayjobs/);
       if (companyMatch) info.company = formatCompanyName(companyMatch[1]);
-      
-      const titleEl = document.querySelector('[data-automation-id="jobPostingHeader"] h2, .css-1j389vi, h1');
+
+      const titleEl = document.querySelector(
+        '[data-automation-id="jobPostingHeader"] h2, .css-1j389vi, h1',
+      );
       if (titleEl) info.title = titleEl.textContent.trim();
     }
 
@@ -4667,8 +4569,8 @@ Respond ONLY with a JSON array like this:
     if (url.includes("greenhouse.io") || url.includes("boards.greenhouse")) {
       const companyMatch = url.match(/boards\.greenhouse\.io\/([^/]+)/);
       if (companyMatch) info.company = formatCompanyName(companyMatch[1]);
-      
-      const titleEl = document.querySelector('h1.app-title, .job-title, h1');
+
+      const titleEl = document.querySelector("h1.app-title, .job-title, h1");
       if (titleEl) info.title = titleEl.textContent.trim();
     }
 
@@ -4676,40 +4578,51 @@ Respond ONLY with a JSON array like this:
     if (url.includes("lever.co")) {
       const companyMatch = url.match(/jobs\.lever\.co\/([^/]+)/);
       if (companyMatch) info.company = formatCompanyName(companyMatch[1]);
-      
-      const titleEl = document.querySelector('.posting-headline h2, h1');
+
+      const titleEl = document.querySelector(".posting-headline h2, h1");
       if (titleEl) info.title = titleEl.textContent.trim();
     }
 
     // LinkedIn
     if (url.includes("linkedin.com")) {
-      const companyEl = document.querySelector('.jobs-unified-top-card__company-name, .topcard__org-name-link, .company-name');
+      const companyEl = document.querySelector(
+        ".jobs-unified-top-card__company-name, .topcard__org-name-link, .company-name",
+      );
       if (companyEl) info.company = companyEl.textContent.trim();
-      
-      const titleEl = document.querySelector('.jobs-unified-top-card__job-title, .topcard__title, h1');
+
+      const titleEl = document.querySelector(
+        ".jobs-unified-top-card__job-title, .topcard__title, h1",
+      );
       if (titleEl) info.title = titleEl.textContent.trim();
     }
 
     // Generic fallback
     if (!info.title) {
-      const h1 = document.querySelector('h1');
+      const h1 = document.querySelector("h1");
       if (h1) info.title = h1.textContent.trim().substring(0, 100);
     }
 
     if (!info.company) {
       // Try meta tags
-      const orgMeta = document.querySelector('meta[property="og:site_name"], meta[name="author"]');
+      const orgMeta = document.querySelector(
+        'meta[property="og:site_name"], meta[name="author"]',
+      );
       if (orgMeta) info.company = orgMeta.content;
 
       // Try JSON-LD
-      document.querySelectorAll('script[type="application/ld+json"]').forEach(script => {
-        try {
-          const data = JSON.parse(script.textContent);
-          if (data["@type"] === "JobPosting" && data.hiringOrganization?.name) {
-            info.company = data.hiringOrganization.name;
-          }
-        } catch {}
-      });
+      document
+        .querySelectorAll('script[type="application/ld+json"]')
+        .forEach((script) => {
+          try {
+            const data = JSON.parse(script.textContent);
+            if (
+              data["@type"] === "JobPosting" &&
+              data.hiringOrganization?.name
+            ) {
+              info.company = data.hiringOrganization.name;
+            }
+          } catch {}
+        });
     }
 
     return info;
@@ -4721,7 +4634,7 @@ Respond ONLY with a JSON array like this:
       .replace(/-/g, " ")
       .replace(/_/g, " ")
       .split(" ")
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(" ");
   }
 
@@ -4736,11 +4649,11 @@ Respond ONLY with a JSON array like this:
     ];
 
     const pageText = document.body.innerText;
-    const hasTextIndicator = successPatterns.some(p => p.test(pageText));
+    const hasTextIndicator = successPatterns.some((p) => p.test(pageText));
 
     // Check for success elements
     const successElements = document.querySelectorAll(
-      '.success, .confirmation, [class*="success"], [class*="confirm"], [class*="thank"]'
+      '.success, .confirmation, [class*="success"], [class*="confirm"], [class*="thank"]',
     );
     const hasSuccessElement = successElements.length > 0;
 
@@ -5036,8 +4949,27 @@ Respond ONLY with a JSON array like this:
     }
     
     .jaf-panel-body {
-      padding: 10px 12px;
+      padding: 8px 10px;
     }
+    
+    /* Compact Tools Layout */
+    .jaf-tools-compact {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .jaf-tools-row {
+      display: flex;
+      gap: 6px;
+    }
+    .jaf-tools-row .jaf-panel-btn {
+      flex: 1;
+    }
+    .jaf-btn-sm {
+      padding: 6px 8px !important;
+      font-size: 10px !important;
+    }
+    
     .jaf-panel-btn {
       width: 100%;
       display: flex;
@@ -5061,7 +4993,8 @@ Respond ONLY with a JSON array like this:
       text-align: center;
       font-size: 10px;
       color: #666;
-      margin-top: 10px;
+      margin-top: 4px;
+      margin-bottom: 4px;
     }
     .jaf-stat-count {
       font-weight: 600;
@@ -5348,10 +5281,10 @@ Respond ONLY with a JSON array like this:
       padding: 2px 0;
     }
     
-    /* AI Chatbox */
+    /* AI Chatbox - NOW AT TOP with more height */
     .jaf-ai-chatbox {
-      border-top: 1px solid #eee;
-      max-height: 350px;
+      border-bottom: 1px solid #eee;
+      max-height: 280px;
       display: flex;
       flex-direction: column;
       width: 100%;
@@ -5362,7 +5295,7 @@ Respond ONLY with a JSON array like this:
       align-items: center;
       justify-content: space-between;
       padding: 8px 12px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       color: #fff;
       font-size: 11px;
       font-weight: 600;
@@ -5379,8 +5312,9 @@ Respond ONLY with a JSON array like this:
     .jaf-chatbox-messages {
       flex: 1;
       overflow-y: auto;
-      padding: 12px;
-      max-height: 200px;
+      padding: 10px;
+      min-height: 100px;
+      max-height: 140px;
       background: #f9fafb;
     }
     .jaf-chat-msg {
@@ -5431,7 +5365,7 @@ Respond ONLY with a JSON array like this:
     }
     .jaf-chatbox-input:focus {
       outline: none;
-      border-color: #667eea;
+      border-color: #10b981;
     }
     .jaf-chatbox-actions {
       display: flex;
@@ -5453,7 +5387,7 @@ Respond ONLY with a JSON array like this:
     .jaf-chatbox-send {
       flex: 1;
       padding: 8px;
-      background: #000;
+      background: #10b981;
       color: #fff;
       border: none;
       border-radius: 6px;
@@ -5466,7 +5400,7 @@ Respond ONLY with a JSON array like this:
       gap: 6px;
     }
     .jaf-chatbox-send:hover {
-      background: #333;
+      background: #059669;
     }
     .jaf-chat-actions {
       display: flex;

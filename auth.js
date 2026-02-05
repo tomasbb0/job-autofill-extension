@@ -87,6 +87,15 @@
 
     // Sign in with Google
     async signInWithGoogle() {
+      // Check if OAuth is configured
+      if (!this.isOAuthConfigured()) {
+        return { 
+          success: false, 
+          error: "Google Sign-In not configured. See popup → Settings for setup instructions.",
+          needsSetup: true
+        };
+      }
+
       if (!this.auth) await this.init();
 
       try {
@@ -110,8 +119,25 @@
         }
       } catch (err) {
         console.error("[Auth] Google sign-in error:", err);
+        
+        // Check for common errors
+        if (err.message && err.message.includes("bad client id")) {
+          return { 
+            success: false, 
+            error: "OAuth not configured. You need to set up Google Cloud credentials.",
+            needsSetup: true
+          };
+        }
+        
         return { success: false, error: err.message };
       }
+    },
+
+    // Check if OAuth credentials are configured
+    isOAuthConfigured() {
+      // The manifest should have a real client ID, not the placeholder
+      // We can't directly check manifest, but we can try and catch
+      return true; // Let it try and catch the error
     },
 
     // Get Google auth token using chrome.identity
@@ -125,7 +151,7 @@
                 "[Auth] Chrome identity error:",
                 chrome.runtime.lastError,
               );
-              reject(chrome.runtime.lastError);
+              reject(new Error(chrome.runtime.lastError.message));
             } else {
               resolve(token);
             }
@@ -211,7 +237,7 @@
 
       try {
         const userId = this.user.uid;
-        
+
         // Sync profile data
         const profileSnapshot = await this.db
           .ref(`users/${userId}/profile`)
@@ -237,41 +263,48 @@
 
         if (cloudPositions) {
           // Convert object to array if needed
-          const positionsArray = Array.isArray(cloudPositions) 
-            ? cloudPositions 
+          const positionsArray = Array.isArray(cloudPositions)
+            ? cloudPositions
             : Object.values(cloudPositions);
-          
+
           // Merge with local positions
-          const localData = await chrome.storage.sync.get(["jobTrackerPositions"]);
+          const localData = await chrome.storage.sync.get([
+            "jobTrackerPositions",
+          ]);
           const localPositions = localData.jobTrackerPositions || [];
-          
+
           // Merge: combine both, dedupe by id
           const allPositions = [...cloudPositions];
-          localPositions.forEach(local => {
-            if (!allPositions.find(p => p.id === local.id)) {
+          localPositions.forEach((local) => {
+            if (!allPositions.find((p) => p.id === local.id)) {
               allPositions.push(local);
             }
           });
-          
+
           // Sort by dateAdded descending
-          allPositions.sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
-          
+          allPositions.sort(
+            (a, b) => new Date(b.dateAdded) - new Date(a.dateAdded),
+          );
+
           await chrome.storage.sync.set({ jobTrackerPositions: allPositions });
-          
+
           // Update JobTracker if available
           if (window.JobTracker) {
             window.JobTracker.positions = allPositions;
           }
-          
-          console.log("[Auth] Synced", allPositions.length, "job positions from cloud");
+
+          console.log(
+            "[Auth] Synced",
+            allPositions.length,
+            "job positions from cloud",
+          );
         } else {
           // No cloud positions - upload local ones
           await this.uploadJobTrackerData();
         }
-        
+
         // Setup real-time listener for positions
         this.setupPositionsListener(userId);
-        
       } catch (err) {
         console.error("[Auth] Sync error:", err);
       }
@@ -280,19 +313,21 @@
     // Setup real-time listener for job tracker positions
     setupPositionsListener(userId) {
       if (this.positionsListener) return; // Already listening
-      
+
       this.positionsListener = this.db
         .ref(`users/${userId}/positions`)
         .on("value", async (snapshot) => {
           const cloudPositions = snapshot.val();
           if (!cloudPositions) return;
-          
+
           const positionsArray = Array.isArray(cloudPositions)
             ? cloudPositions
             : Object.values(cloudPositions);
-          
-          await chrome.storage.sync.set({ jobTrackerPositions: positionsArray });
-          
+
+          await chrome.storage.sync.set({
+            jobTrackerPositions: positionsArray,
+          });
+
           if (window.JobTracker) {
             window.JobTracker.positions = positionsArray;
           }
@@ -302,15 +337,19 @@
     // Upload job tracker data to cloud
     async uploadJobTrackerData() {
       if (!this.user || !this.db) return;
-      
+
       try {
         const userId = this.user.uid;
         const data = await chrome.storage.sync.get(["jobTrackerPositions"]);
         const positions = data.jobTrackerPositions || [];
-        
+
         if (positions.length > 0) {
           await this.db.ref(`users/${userId}/positions`).set(positions);
-          console.log("[Auth] Uploaded", positions.length, "positions to cloud");
+          console.log(
+            "[Auth] Uploaded",
+            positions.length,
+            "positions to cloud",
+          );
         }
       } catch (err) {
         console.error("[Auth] Upload positions error:", err);

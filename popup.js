@@ -1593,7 +1593,14 @@ async function initAuthUI() {
       await syncToCloud(userSession);
     } catch (err) {
       console.error("Google sign-in error:", err);
-      alert("Sign-in failed: " + err.message);
+      
+      // Check for OAuth configuration issues
+      if (err.message && (err.message.includes("bad client id") || err.message.includes("OAuth2"))) {
+        showOAuthSetupInstructions();
+      } else {
+        alert("Sign-in failed: " + err.message);
+      }
+      
       googleSignInBtn.innerHTML = `
         <svg viewBox="0 0 24 24" width="16" height="16">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -1707,6 +1714,79 @@ async function syncToCloud(userSession) {
     syncStatus.innerHTML = `⚠️ Sync failed`;
     syncStatus.className = "sync-status";
   }
+}
+
+// Show OAuth setup instructions
+function showOAuthSetupInstructions() {
+  const modal = document.createElement("div");
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  `;
+  modal.innerHTML = `
+    <div style="
+      background: #fff;
+      border-radius: 12px;
+      max-width: 400px;
+      max-height: 80vh;
+      overflow-y: auto;
+      padding: 20px;
+    ">
+      <h3 style="margin: 0 0 12px; color: #dc2626;">⚠️ Google Sign-In Setup Required</h3>
+      <p style="font-size: 13px; color: #666; margin-bottom: 16px;">
+        To enable Google Sign-In, you need to configure OAuth credentials.
+      </p>
+      
+      <div style="font-size: 12px; color: #333;">
+        <p><strong>For Developers:</strong></p>
+        <ol style="padding-left: 20px; line-height: 1.6;">
+          <li>Go to <a href="https://console.cloud.google.com" target="_blank" style="color: #4285F4;">Google Cloud Console</a></li>
+          <li>Create a new project or select existing</li>
+          <li>Go to APIs & Services → Credentials</li>
+          <li>Create OAuth 2.0 Client ID (Chrome App type)</li>
+          <li>Copy the Client ID</li>
+          <li>Update manifest.json with the client ID</li>
+          <li>Reload the extension</li>
+        </ol>
+        
+        <p style="margin-top: 16px; padding: 10px; background: #f0fdf4; border-radius: 8px;">
+          <strong>💡 Tip:</strong> For personal use, your data is already saved locally. 
+          Cloud sync is optional for multi-device access.
+        </p>
+      </div>
+      
+      <button id="closeOAuthModal" style="
+        margin-top: 16px;
+        width: 100%;
+        padding: 10px;
+        background: #000;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+      ">Got it</button>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  modal.querySelector("#closeOAuthModal").addEventListener("click", () => {
+    modal.remove();
+  });
+  
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) modal.remove();
+  });
 }
 
 // Initialize auth on load
