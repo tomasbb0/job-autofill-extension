@@ -1961,15 +1961,15 @@ First person. Don't repeat other answers.`,
         </div>
       </div>
       
-      <!-- AI Assistant Chatbox -->
-      <div class="jaf-ai-chatbox" style="display: block;">
+      <!-- AI Assistant Chatbox - starts minimized, expands on job application pages -->
+      <div class="jaf-ai-chatbox jaf-chatbox-minimized" style="display: block;">
         <div class="jaf-chatbox-header">
           <span>🤖 AI Assistant</span>
           <button class="jaf-chatbox-close">×</button>
         </div>
         <div class="jaf-chatbox-messages">
           <div class="jaf-chat-msg jaf-chat-ai jaf-chat-loading">
-            <span class="jaf-typing-dots">Analyzing this page...</span>
+            <span class="jaf-typing-dots">Detecting page type...</span>
           </div>
         </div>
         <div class="jaf-chatbox-input-area">
@@ -4341,8 +4341,16 @@ Respond ONLY with a JSON array like this:
   }
 
   // Create "Add Parameter" button for unknown fields
+  // Only shown on job application pages
   async function createAddParameterButton(input) {
     if (input.dataset.autofillButton) return;
+
+    // Don't create Add Parameter buttons on non-application pages
+    // Wait for page detection if not yet available
+    if (window.jafIsApplicationPage === false) {
+      // Not an application page - skip add parameter button
+      return;
+    }
 
     const fieldLabel = getFieldLabel(input);
 
@@ -4508,11 +4516,13 @@ Respond ONLY with a JSON array like this:
 
     if (data.showBadge === false) return;
 
+    // Delay button detection until after SmartChatbox has analyzed the page type
+    // This ensures Add Parameter buttons only appear on job application pages
     setTimeout(() => {
       if (detectJobPage() || data.autoDetect !== false || isGreenhouseIframe) {
         detectAndAddButtons();
       }
-    }, 1000);
+    }, 1200); // After SmartChatbox detection (500ms) + analysis
 
     const observer = new MutationObserver((mutations) => {
       if (isExtensionDisabled) return; // Don't process if disabled

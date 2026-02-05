@@ -332,19 +332,98 @@
       return null;
     },
 
+    // Detect if current page is a job application
+    isJobApplicationPage() {
+      const url = window.location.href.toLowerCase();
+      const pageText = document.body?.innerText?.toLowerCase() || '';
+      const pageTitle = document.title?.toLowerCase() || '';
+
+      // URL patterns that indicate job applications
+      const applicationUrlPatterns = [
+        /workday/i, /greenhouse/i, /lever\.co/i, /ashbymq/i, /breezy\.hr/i,
+        /smartrecruiters/i, /jobvite/i, /taleo/i, /icims/i, /ultipro/i,
+        /adp\./i, /myworkday/i, /careers\./i, /jobs\./i, /apply/i,
+        /application/i, /hiring/i, /recruit/i, /talent/i, /wd\d+\./i
+      ];
+
+      // Check URL
+      const isApplicationUrl = applicationUrlPatterns.some(pattern => pattern.test(url));
+      
+      // Page content indicators
+      const applicationKeywords = [
+        'apply for', 'job application', 'submit application', 'your application',
+        'upload resume', 'upload cv', 'cover letter', 'work experience',
+        'employment history', 'education history', 'years of experience',
+        'attach resume', 'apply now', 'submit your application', 'job posting',
+        'position', 'we are hiring', 'join our team', 'career opportunity',
+        'how did you hear about', 'willing to relocate', 'work authorization',
+        'equal opportunity', 'diversity', 'your resume', 'your cv'
+      ];
+
+      const keywordMatches = applicationKeywords.filter(kw => pageText.includes(kw)).length;
+
+      // Form indicators - job applications usually have many text inputs
+      const textInputs = document.querySelectorAll('input[type="text"], textarea');
+      const fileInputs = document.querySelectorAll('input[type="file"]');
+      const selectDropdowns = document.querySelectorAll('select');
+      
+      // Calculate confidence score
+      let score = 0;
+      if (isApplicationUrl) score += 40;
+      if (keywordMatches >= 3) score += 30;
+      if (keywordMatches >= 6) score += 20;
+      if (textInputs.length >= 5) score += 15;
+      if (fileInputs.length >= 1) score += 15;  // Resume upload field
+      if (selectDropdowns.length >= 2) score += 10;
+      if (pageTitle.includes('apply') || pageTitle.includes('application') || pageTitle.includes('career')) score += 15;
+
+      console.log(`[SmartChatbox] Application detection score: ${score}/100 (URL: ${isApplicationUrl}, Keywords: ${keywordMatches})`);
+
+      // Return detection result
+      return {
+        isApplication: score >= 40,
+        confidence: score,
+        hasFormFields: textInputs.length >= 3
+      };
+    },
+
     // Open chatbox with page analysis
     async open() {
       if (!this.panel) return;
 
-      this.isOpen = true;
       const chatbox = this.panel.querySelector(".jaf-ai-chatbox");
       const messagesEl = this.panel.querySelector(".jaf-chatbox-messages");
 
       if (!chatbox) return;
 
+      // Detect if this is a job application page
+      const pageDetection = this.isJobApplicationPage();
+      this.isApplicationPage = pageDetection.isApplication;
+
+      // Store detection result for other functions
+      window.jafIsApplicationPage = pageDetection.isApplication;
+
+      if (!pageDetection.isApplication) {
+        // Non-application page: collapse chatbox, hide add parameter buttons
+        this.isOpen = false;
+        chatbox.classList.add("jaf-chatbox-minimized");
+        messagesEl.innerHTML = '';
+        this.addMessage("ai", `👋 Hi! This doesn't look like a job application.\n\nYour saved data is available if you need it. Click here to expand.`);
+        
+        // Hide add parameter buttons on non-application pages
+        this.hideAddParameterButtons();
+        return;
+      }
+
+      // It IS an application page - expand and analyze
+      this.isOpen = true;
+      chatbox.classList.remove("jaf-chatbox-minimized");
       chatbox.style.display = "block";
       messagesEl.innerHTML = "";
       this.chatHistory = [];
+
+      // Show add parameter buttons
+      this.showAddParameterButtons();
 
       // Show analyzing message
       this.addMessage("ai", "🔍 Analyzing the application form...");
@@ -359,6 +438,30 @@
       // Clear and show summary
       messagesEl.innerHTML = "";
       this.addMessage("ai", summary);
+    },
+
+    // Hide "Add Parameter" buttons on non-application pages
+    hideAddParameterButtons() {
+      if (!this.panel) return;
+      const addButtons = this.panel.querySelectorAll('.jaf-add-param-btn');
+      addButtons.forEach(btn => {
+        btn.style.display = 'none';
+      });
+      // Also hide missing fields section
+      const missingSection = this.panel.querySelector('#jaf-missing-section');
+      if (missingSection) missingSection.style.display = 'none';
+    },
+
+    // Show "Add Parameter" buttons on application pages
+    showAddParameterButtons() {
+      if (!this.panel) return;
+      const addButtons = this.panel.querySelectorAll('.jaf-add-param-btn');
+      addButtons.forEach(btn => {
+        btn.style.display = '';
+      });
+      // Show missing fields section
+      const missingSection = this.panel.querySelector('#jaf-missing-section');
+      if (missingSection) missingSection.style.display = '';
     },
 
     // Build analysis summary - natural language as described in READTHIS
