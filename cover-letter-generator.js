@@ -5,17 +5,19 @@
   "use strict";
 
   window.CoverLetterGenerator = {
-    // Model for content generation
-    MODEL: "gpt-4o-mini",
+    // Model for content generation - o4-mini with extended thinking
+    MODEL: "o4-mini",
 
-    // Generate cover letter content
+    // Generate cover letter content with extended thinking
     async generateCoverLetter(jobDetails, profileData) {
       const apiKey = (await chrome.storage.sync.get("openaiKey")).openaiKey;
       if (!apiKey) {
         throw new Error("API key required! Click the extension icon → AI tab → follow the setup guide to get your OpenAI key");
       }
 
-      const prompt = this.buildPrompt(jobDetails, profileData);
+      // Get ALL stored data for context
+      const allData = await chrome.storage.sync.get(null);
+      const prompt = this.buildPrompt(jobDetails, profileData, allData);
 
       const response = await fetch(
         "https://api.openai.com/v1/chat/completions",
@@ -27,26 +29,26 @@
           },
           body: JSON.stringify({
             model: this.MODEL,
+            reasoning_effort: "high",
             messages: [
               {
-                role: "system",
-                content: `You are a professional cover letter writer. Write compelling, personalized cover letters that:
-- Match the candidate's experience to the job requirements
-- Are concise (300-400 words)
-- Sound natural and professional, not generic
-- Highlight specific achievements and skills
-- Show genuine interest in the company and role
-- Include a strong opening and call to action`,
+                role: "user",
+                content: prompt,
               },
-              { role: "user", content: prompt },
             ],
-            max_tokens: 1000,
-            temperature: 0.7,
+            max_completion_tokens: 16000,
           }),
         },
       );
 
       if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        console.error("Cover letter API error:", errData);
+        
+        // Fallback to gpt-4o-mini if o4-mini not available
+        if (errData.error?.code === "model_not_found") {
+          return this.generateCoverLetterFallback(jobDetails, profileData, allData);
+        }
         throw new Error("Failed to generate cover letter");
       }
 
@@ -54,13 +56,61 @@
       return result.choices[0].message.content;
     },
 
-    // Build prompt for cover letter generation
-    buildPrompt(jobDetails, profileData) {
+    // Fallback to gpt-4o-mini
+    async generateCoverLetterFallback(jobDetails, profileData, allData) {
+      const apiKey = (await chrome.storage.sync.get("openaiKey")).openaiKey;
+      const prompt = this.buildPrompt(jobDetails, profileData, allData);
+
+      const response = await fetch(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: [
+              {
+                role: "system",
+                content: `You are an expert cover letter writer. You MUST follow these rules STRICTLY:
+
+1. NEVER use placeholder text like [Your Name], [Company], [Position], [Date], etc.
+2. NEVER leave any field in brackets - always fill with actual data
+3. Use the candidate's REAL name, the REAL company name, the REAL job title
+4. Write naturally as if the candidate wrote it themselves
+5. Be specific - reference actual skills, experiences, and achievements from their profile
+6. Match the candidate's experience to the job requirements
+7. Keep it 300-400 words, professional but personable
+8. Include a strong opening and confident closing`,
+              },
+              { role: "user", content: prompt },
+            ],
+            max_tokens: 1500,
+            temperature: 0.7,
+          }),
+        },
+      );
+
+      if (!response.ok) throw new Error("Failed to generate cover letter");
+      const result = await response.json();
+      return result.choices[0].message.content;
+    },
+
+    // Build comprehensive prompt with ALL available data
+    buildPrompt(jobDetails, profileData, allData) {
       const parts = [];
 
-      parts.push(
-        "Generate a professional cover letter for the following job application:",
-      );
+      parts.push(`CRITICAL INSTRUCTIONS:
+- You MUST write a complete, ready-to-send cover letter
+- NEVER use placeholders like [Your Name], [Company], [Date], etc.
+- NEVER leave ANY field in brackets
+- Use the ACTUAL data provided below
+- If any data is missing, make a reasonable inference or omit that detail gracefully
+- The letter should sound like the candidate wrote it, not like a template
+
+Generate a professional cover letter for this job application:`);
       parts.push("");
 
       // Job details
@@ -70,27 +120,35 @@
       if (jobDetails.location) parts.push(`Location: ${jobDetails.location}`);
       if (jobDetails.description) {
         parts.push(`Job Description:`);
-        parts.push(jobDetails.description.substring(0, 2000));
+        parts.push(jobDetails.description.substring(0, 3000));
       }
       parts.push("");
 
-      // Candidate profile
+      // Candidate profile - comprehensive
       parts.push("=== CANDIDATE PROFILE ===");
-      if (profileData.fullName) parts.push(`Name: ${profileData.fullName}`);
-      if (profileData.currentTitle)
-        parts.push(`Current Title: ${profileData.currentTitle}`);
-      if (profileData.currentCompany)
-        parts.push(`Current Company: ${profileData.currentCompany}`);
-      if (profileData.yearsExperience)
-        parts.push(`Years of Experience: ${profileData.yearsExperience}`);
+      
+      // Basic info
+      const name = profileData.fullName || `${allData.firstName || ""} ${allData.lastName || ""}`.trim() || "Candidate";
+      parts.push(`Full Name: ${name}`);
+      
+      if (allData.email) parts.push(`Email: ${allData.email}`);
+      if (allData.phone) parts.push(`Phone: ${allData.phone}`);
+      if (allData.city || allData.country) parts.push(`Location: ${[allData.city, allData.country].filter(Boolean).join(", ")}`);
+      if (allData.linkedin) parts.push(`LinkedIn: ${allData.linkedin}`);
+      if (allData.website) parts.push(`Website: ${allData.website}`);
+      if (allData.github) parts.push(`GitHub: ${allData.github}`);
+      
+      // Professional info
+      if (allData.currentTitle) parts.push(`Current Title: ${allData.currentTitle}`);
+      if (allData.currentCompany) parts.push(`Current Company: ${allData.currentCompany}`);
+      if (allData.yearsExperience) parts.push(`Years of Experience: ${allData.yearsExperience}`);
 
       // Work history
       if (profileData.workHistory && profileData.workHistory.length > 0) {
         parts.push(`\nWork History:`);
-        profileData.workHistory.slice(0, 3).forEach((job, i) => {
-          parts.push(`${i + 1}. ${job.title} at ${job.company}`);
-          if (job.description)
-            parts.push(`   ${job.description.substring(0, 200)}`);
+        profileData.workHistory.forEach((job, i) => {
+          parts.push(`${i + 1}. ${job.title} at ${job.company} (${job.dates || "N/A"})`);
+          if (job.description) parts.push(`   Responsibilities: ${job.description}`);
         });
       }
 
@@ -98,29 +156,64 @@
       if (profileData.education && profileData.education.length > 0) {
         parts.push(`\nEducation:`);
         profileData.education.forEach((edu) => {
-          parts.push(
-            `- ${edu.degree} in ${edu.field || "N/A"} from ${edu.school}`,
-          );
+          parts.push(`- ${edu.degree}${edu.field ? ` in ${edu.field}` : ""} from ${edu.school}${edu.year ? ` (${edu.year})` : ""}`);
         });
+      } else if (allData.university || allData.degree) {
+        parts.push(`\nEducation:`);
+        parts.push(`- ${allData.degree || "Degree"} from ${allData.university || "University"}${allData.gradYear ? ` (${allData.gradYear})` : ""}`);
       }
 
       // Skills
       if (profileData.skills && profileData.skills.length > 0) {
-        parts.push(
-          `\nKey Skills: ${profileData.skills.slice(0, 10).join(", ")}`,
-        );
+        parts.push(`\nKey Skills: ${profileData.skills.join(", ")}`);
       }
 
-      // CV text if available
-      if (profileData.cvText) {
-        parts.push(`\nAdditional CV Content:`);
-        parts.push(profileData.cvText.substring(0, 1500));
+      // Certifications
+      if (profileData.certifications && profileData.certifications.length > 0) {
+        parts.push(`\nCertifications: ${profileData.certifications.join(", ")}`);
+      }
+
+      // CV/Resume content
+      if (allData.cvContent) {
+        parts.push(`\n=== FULL RESUME/CV CONTENT ===`);
+        parts.push(allData.cvContent.substring(0, 5000));
+      }
+
+      // Extracted documents
+      if (allData.extractedDocuments && allData.extractedDocuments.length > 0) {
+        parts.push(`\n=== ADDITIONAL DOCUMENTS ===`);
+        allData.extractedDocuments.forEach(doc => {
+          if (doc.content) {
+            parts.push(`Document: ${doc.name}`);
+            parts.push(doc.content.substring(0, 2000));
+          }
+        });
+      }
+
+      // User context/bio
+      if (allData.userContext) {
+        parts.push(`\n=== ABOUT THE CANDIDATE ===`);
+        parts.push(allData.userContext);
+      }
+
+      // Learned responses (Q&A from past applications)
+      if (allData.learnedResponses && Object.keys(allData.learnedResponses).length > 0) {
+        parts.push(`\n=== PAST APPLICATION ANSWERS ===`);
+        Object.entries(allData.learnedResponses).forEach(([key, value]) => {
+          if (value && typeof value === "string" && value.length > 10) {
+            parts.push(`Q: ${key}`);
+            parts.push(`A: ${value.substring(0, 500)}`);
+          }
+        });
       }
 
       parts.push("");
-      parts.push(
-        "Write a compelling cover letter that matches this candidate to this role. Use specific examples from their experience.",
-      );
+      parts.push(`REMEMBER: 
+1. Use "${name}" as the candidate's actual name (NOT [Your Name])
+2. Use "${jobDetails.company || "the company"}" as the actual company name (NOT [Company])
+3. Use "${jobDetails.title || "this position"}" as the actual position (NOT [Position])
+4. DO NOT include any text in square brackets []
+5. Write a complete, ready-to-send letter`);
 
       return parts.join("\n");
     },
@@ -148,6 +241,8 @@
         if (el && el.textContent.trim()) {
           details.company = el.textContent.trim();
           break;
+        }
+      }
         }
       }
 
